@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FGO Bot</string>
+    <string name="accessibility_service_description">FGO Bot needs accessibility service to automate gameplay in Fate/Grand Order.</string>
+</resources> 
