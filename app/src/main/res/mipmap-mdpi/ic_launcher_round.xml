@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    FGO Bot - Round Launcher Icon (MDPI)
+    
+    Round launcher icon for the FGO Bot application.
+    This is a circular version of the main launcher icon for devices that support round icons.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    
+    <!-- Background circle (full circle for round icon) -->
+    <path
+        android:fillColor="@color/fgo_blue"
+        android:pathData="M24,24m-24,0a24,24 0,1 1,48 0a24,24 0,1 1,-48 0" />
+    
+    <!-- Inner circle -->
+    <path
+        android:fillColor="@color/fgo_gold"
+        android:pathData="M24,24m-18,0a18,18 0,1 1,36 0a18,18 0,1 1,-36 0" />
+    
+    <!-- Center text "F" -->
+    <path
+        android:fillColor="@color/fgo_blue"
+        android:pathData="M18,14 L18,34 L22,34 L22,26 L28,26 L28,22 L22,22 L22,18 L30,18 L30,14 Z" />
+    
+</vector> 

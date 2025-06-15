@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    FGO Bot - Launcher Icon (XXHDPI)
+    
+    Basic launcher icon for the FGO Bot application.
+    This is a simple placeholder icon that can be replaced with a proper design later.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="@color/fgo_blue"
+        android:pathData="M24,24m-22,0a22,22 0,1 1,44 0a22,22 0,1 1,-44 0" />
+    
+    <!-- Inner circle -->
+    <path
+        android:fillColor="@color/fgo_gold"
+        android:pathData="M24,24m-16,0a16,16 0,1 1,32 0a16,16 0,1 1,-32 0" />
+    
+    <!-- Center text "F" -->
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M18,16h8v3h-5v3h4v3h-4v5h-3V16z" />
+</vector> 
