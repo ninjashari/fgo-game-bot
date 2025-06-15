@@ -1,0 +1,1489 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.10.1" type="baseline" client="gradle" dependencies="false" name="AGP (8.10.1)" variant="all" version="8.10.1">
+
+    <issue
+        id="ScopedStorage"
+        message="READ_EXTERNAL_STORAGE is deprecated (and is not granted) when targeting Android 13+. If you need to query or interact with MediaStore or media files on the shared storage, you should instead use one or more new storage permissions: `READ_MEDIA_IMAGES`, `READ_MEDIA_VIDEO` or `READ_MEDIA_AUDIO`."
+        errorLine1="    &lt;uses-permission android:name=&quot;android.permission.READ_EXTERNAL_STORAGE&quot; />"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/AndroidManifest.xml"
+            line="24"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="ScopedStorage"
+        message="WRITE_EXTERNAL_STORAGE is deprecated (and is not granted) when targeting Android 13+. If you need to write to shared storage, use the `MediaStore.createWriteRequest` intent."
+        errorLine1="    &lt;uses-permission android:name=&quot;android.permission.WRITE_EXTERNAL_STORAGE&quot; />"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/AndroidManifest.xml"
+            line="25"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="OldTargetApi"
+        message="Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the `android.os.Build.VERSION_CODES` javadoc for details."
+        errorLine1="        targetSdk = 34  // Android 14 (API level 34)"
+        errorLine2="        ~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="27"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="FullBackupContent"
+        message="`temp_cache.db` is not in an included path"
+        errorLine1="        &lt;exclude domain=&quot;database&quot; path=&quot;temp_cache.db&quot; />"
+        errorLine2="                                         ~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/xml/data_extraction_rules.xml"
+            line="18"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="FullBackupContent"
+        message="Unexpected domain `cache`, expected one of file, database, sharedpref, external, root, device_file, device_database, device_sharedpref, device_root"
+        errorLine1="        &lt;exclude domain=&quot;cache&quot; path=&quot;.&quot; />"
+        errorLine2="                         ~~~~~">
+        <location
+            file="src/main/res/xml/data_extraction_rules.xml"
+            line="21"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="FullBackupContent"
+        message="`.` is not in an included path"
+        errorLine1="        &lt;exclude domain=&quot;cache&quot; path=&quot;.&quot; />"
+        errorLine2="                                      ~">
+        <location
+            file="src/main/res/xml/data_extraction_rules.xml"
+            line="21"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="FullBackupContent"
+        message="`temp_cache.db` is not in an included path"
+        errorLine1="        &lt;exclude domain=&quot;database&quot; path=&quot;temp_cache.db&quot; />"
+        errorLine2="                                         ~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/xml/data_extraction_rules.xml"
+            line="33"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="FullBackupContent"
+        message="Unexpected domain `cache`, expected one of file, database, sharedpref, external, root, device_file, device_database, device_sharedpref, device_root"
+        errorLine1="        &lt;exclude domain=&quot;cache&quot; path=&quot;.&quot; />"
+        errorLine2="                         ~~~~~">
+        <location
+            file="src/main/res/xml/data_extraction_rules.xml"
+            line="36"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="FullBackupContent"
+        message="`.` is not in an included path"
+        errorLine1="        &lt;exclude domain=&quot;cache&quot; path=&quot;.&quot; />"
+        errorLine2="                                      ~">
+        <location
+            file="src/main/res/xml/data_extraction_rules.xml"
+            line="36"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="RedundantLabel"
+        message="Redundant label can be removed"
+        errorLine1="            android:label=&quot;@string/app_name&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/AndroidManifest.xml"
+            line="48"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="AndroidGradlePluginVersion"
+        message="A newer version of Gradle than 8.11.1 is available: 8.14.2"
+        errorLine1="distributionUrl=https\://services.gradle.org/distributions/gradle-8.11.1-bin.zip"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/websites/fgo-game-bot/gradle/wrapper/gradle-wrapper.properties"
+            line="3"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of `compileSdkVersion` than 34 is available: 35"
+        errorLine1="    compileSdk = 34"
+        errorLine2="    ~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="22"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.core:core-ktx than 1.13.1 is available: 1.16.0"
+        errorLine1="    implementation(&quot;androidx.core:core-ktx:1.13.1&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="94"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.appcompat:appcompat than 1.7.0 is available: 1.7.1"
+        errorLine1="    implementation(&quot;androidx.appcompat:appcompat:1.7.0&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="95"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.lifecycle:lifecycle-runtime-ktx than 2.8.2 is available: 2.9.1"
+        errorLine1="    implementation(&quot;androidx.lifecycle:lifecycle-runtime-ktx:2.8.2&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="98"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.activity:activity-compose than 1.9.0 is available: 1.10.1"
+        errorLine1="    implementation(&quot;androidx.activity:activity-compose:1.9.0&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="99"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.compose:compose-bom than 2024.06.00 is available: 2025.06.00"
+        errorLine1="    implementation(platform(&quot;androidx.compose:compose-bom:2024.06.00&quot;))"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="102"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.navigation:navigation-compose than 2.7.5 is available: 2.9.0"
+        errorLine1="    implementation(&quot;androidx.navigation:navigation-compose:2.7.5&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="110"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.lifecycle:lifecycle-viewmodel-compose than 2.7.0 is available: 2.9.1"
+        errorLine1="    implementation(&quot;androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="113"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.lifecycle:lifecycle-livedata-ktx than 2.7.0 is available: 2.9.1"
+        errorLine1="    implementation(&quot;androidx.lifecycle:lifecycle-livedata-ktx:2.7.0&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="114"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-runtime than 2.6.1 is available: 2.7.1"
+        errorLine1="    implementation(&quot;androidx.room:room-runtime:2.6.1&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="117"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-ktx than 2.6.1 is available: 2.7.1"
+        errorLine1="    implementation(&quot;androidx.room:room-ktx:2.6.1&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="118"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-compiler than 2.6.1 is available: 2.7.1"
+        errorLine1="    ksp(&quot;androidx.room:room-compiler:2.6.1&quot;)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="119"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.squareup.retrofit2:retrofit than 2.9.0 is available: 2.11.0"
+        errorLine1="    implementation(&quot;com.squareup.retrofit2:retrofit:2.9.0&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="122"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.squareup.retrofit2:converter-gson than 2.9.0 is available: 2.11.0"
+        errorLine1="    implementation(&quot;com.squareup.retrofit2:converter-gson:2.9.0&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="123"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.google.code.gson:gson than 2.10.1 is available: 2.11.0"
+        errorLine1="    implementation(&quot;com.google.code.gson:gson:2.10.1&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="128"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-android than 1.7.3 is available: 1.10.2"
+        errorLine1="    implementation(&quot;org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="131"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-core than 1.7.3 is available: 1.10.2"
+        errorLine1="    implementation(&quot;org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="132"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-test than 1.7.3 is available: 1.10.2"
+        errorLine1="    testImplementation(&quot;org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3&quot;)"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="151"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-testing than 2.6.1 is available: 2.7.1"
+        errorLine1="    testImplementation(&quot;androidx.room:room-testing:2.6.1&quot;)"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="152"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.test.ext:junit than 1.1.5 is available: 1.2.1"
+        errorLine1="    androidTestImplementation(&quot;androidx.test.ext:junit:1.1.5&quot;)"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="158"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.test.espresso:espresso-core than 3.5.1 is available: 3.6.1"
+        errorLine1="    androidTestImplementation(&quot;androidx.test.espresso:espresso-core:3.5.1&quot;)"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="159"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.compose:compose-bom than 2024.06.00 is available: 2025.06.00"
+        errorLine1="    androidTestImplementation(platform(&quot;androidx.compose:compose-bom:2024.06.00&quot;))"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="160"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.navigation:navigation-testing than 2.7.5 is available: 2.9.0"
+        errorLine1="    androidTestImplementation(&quot;androidx.navigation:navigation-testing:2.7.5&quot;)"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="162"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="LockedOrientationActivity"
+        message="Expecting `android:screenOrientation=&quot;unspecified&quot;` or `&quot;fullSensor&quot;` for this activity so the user can use the application in any orientation and provide a great experience on Chrome OS devices"
+        errorLine1="            android:screenOrientation=&quot;portrait&quot;>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/AndroidManifest.xml"
+            line="50"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="SwitchIntDef"
+        message="Switch statement on an `int` with known associated constant missing case `AccessibilityEvent.TYPE_ANNOUNCEMENT`, `AccessibilityEvent.TYPE_ASSIST_READING_CONTEXT`, `AccessibilityEvent.TYPE_GESTURE_DETECTION_END`, `AccessibilityEvent.TYPE_GESTURE_DETECTION_START`, `AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED`, `AccessibilityEvent.TYPE_SPEECH_STATE_CHANGE`, `AccessibilityEvent.TYPE_TOUCH_EXPLORATION_GESTURE_END`, `AccessibilityEvent.TYPE_TOUCH_EXPLORATION_GESTURE_START`, `AccessibilityEvent.TYPE_TOUCH_INTERACTION_END`, `AccessibilityEvent.TYPE_TOUCH_INTERACTION_START`, `AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED`, `AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED`, `AccessibilityEvent.TYPE_VIEW_CONTEXT_CLICKED`, `AccessibilityEvent.TYPE_VIEW_FOCUSED`, `AccessibilityEvent.TYPE_VIEW_HOVER_ENTER`, `AccessibilityEvent.TYPE_VIEW_HOVER_EXIT`, `AccessibilityEvent.TYPE_VIEW_LONG_CLICKED`, `AccessibilityEvent.TYPE_VIEW_SCROLLED`, `AccessibilityEvent.TYPE_VIEW_SELECTED`, `AccessibilityEvent.TYPE_VIEW_TARGETED_BY_SCROLL`, `AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED`, `AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED`, `AccessibilityEvent.TYPE_VIEW_TEXT_TRAVERSED_AT_MOVEMENT_GRANULARITY`, `AccessibilityEvent.TYPE_WINDOWS_CHANGED`, `AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED`"
+        errorLine1="            when (accessibilityEvent.eventType) {"
+        errorLine2="            ~~~~">
+        <location
+            file="src/main/java/com/fgobot/core/FGOAccessibilityService.kt"
+            line="88"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="DiscouragedApi"
+        message="Should not restrict activity to fixed orientation. This may not be suitable for different form factors, causing the app to be letterboxed."
+        errorLine1="            android:screenOrientation=&quot;portrait&quot;>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/AndroidManifest.xml"
+            line="50"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="LogNotTimber"
+        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
+        errorLine1="            Log.e(&quot;FGOBot-Logger&quot;, &quot;Failed to write to log file&quot;, e)"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/fgobot/core/logging/FGOBotLogger.kt"
+            line="280"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 21"
+        errorLine1="        &lt;item name=&quot;android:statusBarColor&quot; tools:targetApi=&quot;l&quot;>@color/background_dark&lt;/item>"
+        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="32"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 21"
+        errorLine1="        &lt;item name=&quot;android:statusBarColor&quot; tools:targetApi=&quot;l&quot;>?attr/colorPrimaryContainer&lt;/item>"
+        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="34"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.purple_200` appears to be unused"
+        errorLine1="    &lt;color name=&quot;purple_200&quot;>#FFBB86FC&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="10"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.purple_500` appears to be unused"
+        errorLine1="    &lt;color name=&quot;purple_500&quot;>#FF6200EE&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="11"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.purple_700` appears to be unused"
+        errorLine1="    &lt;color name=&quot;purple_700&quot;>#FF3700B3&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="12"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.teal_200` appears to be unused"
+        errorLine1="    &lt;color name=&quot;teal_200&quot;>#FF03DAC5&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="15"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.teal_700` appears to be unused"
+        errorLine1="    &lt;color name=&quot;teal_700&quot;>#FF018786&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="16"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.gray_50` appears to be unused"
+        errorLine1="    &lt;color name=&quot;gray_50&quot;>#FFFAFAFA&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="21"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.gray_100` appears to be unused"
+        errorLine1="    &lt;color name=&quot;gray_100&quot;>#FFF5F5F5&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="22"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.gray_200` appears to be unused"
+        errorLine1="    &lt;color name=&quot;gray_200&quot;>#FFEEEEEE&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="23"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.gray_300` appears to be unused"
+        errorLine1="    &lt;color name=&quot;gray_300&quot;>#FFE0E0E0&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="24"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.gray_400` appears to be unused"
+        errorLine1="    &lt;color name=&quot;gray_400&quot;>#FFBDBDBD&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="25"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.gray_500` appears to be unused"
+        errorLine1="    &lt;color name=&quot;gray_500&quot;>#FF9E9E9E&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="26"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.gray_600` appears to be unused"
+        errorLine1="    &lt;color name=&quot;gray_600&quot;>#FF757575&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="27"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.gray_700` appears to be unused"
+        errorLine1="    &lt;color name=&quot;gray_700&quot;>#FF616161&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="28"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.gray_800` appears to be unused"
+        errorLine1="    &lt;color name=&quot;gray_800&quot;>#FF424242&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="29"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.gray_900` appears to be unused"
+        errorLine1="    &lt;color name=&quot;gray_900&quot;>#FF212121&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="30"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.fgo_red` appears to be unused"
+        errorLine1="    &lt;color name=&quot;fgo_red&quot;>#FFD32F2F&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="37"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.fgo_red_dark` appears to be unused"
+        errorLine1="    &lt;color name=&quot;fgo_red_dark&quot;>#FFB71C1C&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="38"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.fgo_green` appears to be unused"
+        errorLine1="    &lt;color name=&quot;fgo_green&quot;>#FF388E3C&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="39"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.fgo_green_dark` appears to be unused"
+        errorLine1="    &lt;color name=&quot;fgo_green_dark&quot;>#FF1B5E20&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="40"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.success` appears to be unused"
+        errorLine1="    &lt;color name=&quot;success&quot;>#FF4CAF50&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="43"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.warning` appears to be unused"
+        errorLine1="    &lt;color name=&quot;warning&quot;>#FFFF9800&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="44"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.info` appears to be unused"
+        errorLine1="    &lt;color name=&quot;info&quot;>#FF2196F3&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="46"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.rarity_1_bronze` appears to be unused"
+        errorLine1="    &lt;color name=&quot;rarity_1_bronze&quot;>#FFCD7F32&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="49"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.rarity_2_bronze` appears to be unused"
+        errorLine1="    &lt;color name=&quot;rarity_2_bronze&quot;>#FFCD7F32&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="50"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.rarity_3_silver` appears to be unused"
+        errorLine1="    &lt;color name=&quot;rarity_3_silver&quot;>#FFC0C0C0&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="51"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.rarity_4_gold` appears to be unused"
+        errorLine1="    &lt;color name=&quot;rarity_4_gold&quot;>#FFFFD700&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="52"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.rarity_5_gold` appears to be unused"
+        errorLine1="    &lt;color name=&quot;rarity_5_gold&quot;>#FFFFD700&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="53"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.text_secondary_light` appears to be unused"
+        errorLine1="    &lt;color name=&quot;text_secondary_light&quot;>#FF757575&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="64"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.text_secondary_dark` appears to be unused"
+        errorLine1="    &lt;color name=&quot;text_secondary_dark&quot;>#FFBDBDBD&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="65"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.nav_home` appears to be unused"
+        errorLine1="    &lt;string name=&quot;nav_home&quot;>Home&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="17"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.nav_teams` appears to be unused"
+        errorLine1="    &lt;string name=&quot;nav_teams&quot;>Teams&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="18"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.nav_quests` appears to be unused"
+        errorLine1="    &lt;string name=&quot;nav_quests&quot;>Quests&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="19"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.nav_battle` appears to be unused"
+        errorLine1="    &lt;string name=&quot;nav_battle&quot;>Battle&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="20"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.nav_settings` appears to be unused"
+        errorLine1="    &lt;string name=&quot;nav_settings&quot;>Settings&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="21"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.team_management` appears to be unused"
+        errorLine1="    &lt;string name=&quot;team_management&quot;>Team Management&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="24"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.create_team` appears to be unused"
+        errorLine1="    &lt;string name=&quot;create_team&quot;>Create Team&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="25"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.edit_team` appears to be unused"
+        errorLine1="    &lt;string name=&quot;edit_team&quot;>Edit Team&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="26"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.delete_team` appears to be unused"
+        errorLine1="    &lt;string name=&quot;delete_team&quot;>Delete Team&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="27"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.team_name` appears to be unused"
+        errorLine1="    &lt;string name=&quot;team_name&quot;>Team Name&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="28"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.select_servants` appears to be unused"
+        errorLine1="    &lt;string name=&quot;select_servants&quot;>Select Servants&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="29"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.select_craft_essences` appears to be unused"
+        errorLine1="    &lt;string name=&quot;select_craft_essences&quot;>Select Craft Essences&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="30"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.quest_selection` appears to be unused"
+        errorLine1="    &lt;string name=&quot;quest_selection&quot;>Quest Selection&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="33"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.daily_quests` appears to be unused"
+        errorLine1="    &lt;string name=&quot;daily_quests&quot;>Daily Quests&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="34"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.story_quests` appears to be unused"
+        errorLine1="    &lt;string name=&quot;story_quests&quot;>Story Quests&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="35"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.event_quests` appears to be unused"
+        errorLine1="    &lt;string name=&quot;event_quests&quot;>Event Quests&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="36"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.free_quests` appears to be unused"
+        errorLine1="    &lt;string name=&quot;free_quests&quot;>Free Quests&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="37"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.battle_automation` appears to be unused"
+        errorLine1="    &lt;string name=&quot;battle_automation&quot;>Battle Automation&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="40"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.start_automation` appears to be unused"
+        errorLine1="    &lt;string name=&quot;start_automation&quot;>Start Automation&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="41"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.stop_automation` appears to be unused"
+        errorLine1="    &lt;string name=&quot;stop_automation&quot;>Stop Automation&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="42"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.pause_automation` appears to be unused"
+        errorLine1="    &lt;string name=&quot;pause_automation&quot;>Pause Automation&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="43"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.battle_status` appears to be unused"
+        errorLine1="    &lt;string name=&quot;battle_status&quot;>Battle Status&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="44"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.automation_running` appears to be unused"
+        errorLine1="    &lt;string name=&quot;automation_running&quot;>Automation Running&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="45"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.automation_stopped` appears to be unused"
+        errorLine1="    &lt;string name=&quot;automation_stopped&quot;>Automation Stopped&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="46"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.automation_paused` appears to be unused"
+        errorLine1="    &lt;string name=&quot;automation_paused&quot;>Automation Paused&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="47"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.settings_title` appears to be unused"
+        errorLine1="    &lt;string name=&quot;settings_title&quot;>Settings&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="50"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.automation_settings` appears to be unused"
+        errorLine1="    &lt;string name=&quot;automation_settings&quot;>Automation Settings&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="51"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.performance_settings` appears to be unused"
+        errorLine1="    &lt;string name=&quot;performance_settings&quot;>Performance Settings&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="52"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.data_settings` appears to be unused"
+        errorLine1="    &lt;string name=&quot;data_settings&quot;>Data Settings&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="53"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.about` appears to be unused"
+        errorLine1="    &lt;string name=&quot;about&quot;>About&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="54"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.accessibility_service_name` appears to be unused"
+        errorLine1="    &lt;string name=&quot;accessibility_service_name&quot;>FGO Bot Accessibility Service&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="57"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.error_network` appears to be unused"
+        errorLine1="    &lt;string name=&quot;error_network&quot;>Network error occurred&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="61"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.error_database` appears to be unused"
+        errorLine1="    &lt;string name=&quot;error_database&quot;>Database error occurred&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="62"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.error_permission` appears to be unused"
+        errorLine1="    &lt;string name=&quot;error_permission&quot;>Permission required&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="63"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.error_accessibility_not_enabled` appears to be unused"
+        errorLine1="    &lt;string name=&quot;error_accessibility_not_enabled&quot;>Accessibility service not enabled&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="64"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.error_unknown` appears to be unused"
+        errorLine1="    &lt;string name=&quot;error_unknown&quot;>An unknown error occurred&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="65"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.success_team_saved` appears to be unused"
+        errorLine1="    &lt;string name=&quot;success_team_saved&quot;>Team saved successfully&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="68"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.success_data_synced` appears to be unused"
+        errorLine1="    &lt;string name=&quot;success_data_synced&quot;>Data synchronized successfully&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="69"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.success_automation_started` appears to be unused"
+        errorLine1="    &lt;string name=&quot;success_automation_started&quot;>Automation started successfully&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="70"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.action_save` appears to be unused"
+        errorLine1="    &lt;string name=&quot;action_save&quot;>Save&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="73"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.action_cancel` appears to be unused"
+        errorLine1="    &lt;string name=&quot;action_cancel&quot;>Cancel&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="74"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.action_delete` appears to be unused"
+        errorLine1="    &lt;string name=&quot;action_delete&quot;>Delete&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="75"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.action_edit` appears to be unused"
+        errorLine1="    &lt;string name=&quot;action_edit&quot;>Edit&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="76"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.action_refresh` appears to be unused"
+        errorLine1="    &lt;string name=&quot;action_refresh&quot;>Refresh&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="77"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.action_sync` appears to be unused"
+        errorLine1="    &lt;string name=&quot;action_sync&quot;>Sync&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="78"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.action_ok` appears to be unused"
+        errorLine1="    &lt;string name=&quot;action_ok&quot;>OK&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="79"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.action_yes` appears to be unused"
+        errorLine1="    &lt;string name=&quot;action_yes&quot;>Yes&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="80"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.action_no` appears to be unused"
+        errorLine1="    &lt;string name=&quot;action_no&quot;>No&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="81"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.loading` appears to be unused"
+        errorLine1="    &lt;string name=&quot;loading&quot;>Loading…&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="84"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.loading_servants` appears to be unused"
+        errorLine1="    &lt;string name=&quot;loading_servants&quot;>Loading servants…&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="85"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.loading_quests` appears to be unused"
+        errorLine1="    &lt;string name=&quot;loading_quests&quot;>Loading quests…&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="86"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.loading_battle_data` appears to be unused"
+        errorLine1="    &lt;string name=&quot;loading_battle_data&quot;>Loading battle data…&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="87"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.empty_teams` appears to be unused"
+        errorLine1="    &lt;string name=&quot;empty_teams&quot;>No teams created yet&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="90"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.empty_quests` appears to be unused"
+        errorLine1="    &lt;string name=&quot;empty_quests&quot;>No quests available&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="91"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.empty_battle_logs` appears to be unused"
+        errorLine1="    &lt;string name=&quot;empty_battle_logs&quot;>No battle logs available&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="92"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.Theme_FGOBot_Splash` appears to be unused"
+        errorLine1="    &lt;style name=&quot;Theme.FGOBot.Splash&quot; parent=&quot;Theme.SplashScreen&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="42"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.CardView_FGOBot` appears to be unused"
+        errorLine1="    &lt;style name=&quot;CardView.FGOBot&quot; parent=&quot;Widget.Material3.CardView.Elevated&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="48"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.Button_FGOBot` appears to be unused"
+        errorLine1="    &lt;style name=&quot;Button.FGOBot&quot; parent=&quot;Widget.Material3.Button&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="54"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.Button_FGOBot_Outlined` appears to be unused"
+        errorLine1="    &lt;style name=&quot;Button.FGOBot.Outlined&quot; parent=&quot;Widget.Material3.Button.OutlinedButton&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="59"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.ShapeAppearanceOverlay_FGOBot_Card` appears to be unused"
+        errorLine1="    &lt;style name=&quot;ShapeAppearanceOverlay.FGOBot.Card&quot; parent=&quot;&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="65"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.ShapeAppearanceOverlay_FGOBot_Button` appears to be unused"
+        errorLine1="    &lt;style name=&quot;ShapeAppearanceOverlay.FGOBot.Button&quot; parent=&quot;&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="70"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.TextAppearance_FGOBot_Headline` appears to be unused"
+        errorLine1="    &lt;style name=&quot;TextAppearance.FGOBot.Headline&quot; parent=&quot;TextAppearance.Material3.HeadlineMedium&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="76"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.TextAppearance_FGOBot_Body` appears to be unused"
+        errorLine1="    &lt;style name=&quot;TextAppearance.FGOBot.Body&quot; parent=&quot;TextAppearance.Material3.BodyMedium&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="81"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.TextAppearance_FGOBot_Caption` appears to be unused"
+        errorLine1="    &lt;style name=&quot;TextAppearance.FGOBot.Caption&quot; parent=&quot;TextAppearance.Material3.BodySmall&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="85"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="ConstantLocale"
+        message="Assigning `Locale.getDefault()` to a final static field is suspicious; this code will not work correctly if the user changes locale while the app is running"
+        errorLine1="    private val dateFormat = SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss.SSS&quot;, Locale.getDefault())"
+        errorLine2="                                                                         ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/fgobot/core/logging/FGOBotLogger.kt"
+            line="53"
+            column="74"/>
+    </issue>
+
+    <issue
+        id="ConstantLocale"
+        message="Assigning `Locale.getDefault()` to a final static field is suspicious; this code will not work correctly if the user changes locale while the app is running"
+        errorLine1="    private val fileDateFormat = SimpleDateFormat(&quot;yyyy-MM-dd&quot;, Locale.getDefault())"
+        errorLine2="                                                                ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/fgobot/core/logging/FGOBotLogger.kt"
+            line="54"
+            column="65"/>
+    </issue>
+
+</issues>

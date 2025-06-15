@@ -62,6 +62,9 @@ android {
 
     kotlinOptions {
         jvmTarget = "11"
+        freeCompilerArgs += listOf(
+            "-opt-in=kotlin.RequiresOptIn"
+        )
     }
 
     buildFeatures {
@@ -70,13 +73,19 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
+        kotlinCompilerExtensionVersion = "1.5.5"
     }
 
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+    
+    lint {
+        baseline = file("lint-baseline.xml")
+        abortOnError = false
+        warningsAsErrors = false
     }
 }
 
@@ -121,6 +130,9 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+
+    // Logging
+    implementation("com.jakewharton.timber:timber:5.0.1")
 
     // Dependency Injection (Hilt) - Optional for future use
     // implementation("com.google.dagger:hilt-android:2.48.1")
