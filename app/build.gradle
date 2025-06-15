@@ -6,6 +6,7 @@ plugins {
 
 android {
     compileSdk 33
+    buildToolsVersion "35.0.1"
 
     defaultConfig {
         applicationId "com.fgobot"
@@ -70,9 +71,6 @@ dependencies {
     // Lifecycle
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
-    
-    // OpenCV
-    implementation 'org.opencv:opencv-android:4.7.0'
     
     // Testing
     testImplementation 'junit:junit:4.13.2'
