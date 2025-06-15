@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    FGO Bot - String Resources
+    
+    This file contains all string resources used throughout the application
+    for proper localization and maintainability.
+-->
+<resources>
+    <!-- Application name -->
+    <string name="app_name">FGO Bot</string>
+    
+    <!-- Main Activity -->
+    <string name="main_title">FGO Game Bot</string>
+    <string name="main_subtitle">Automated Fate/Grand Order Assistant</string>
+    
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_teams">Teams</string>
+    <string name="nav_quests">Quests</string>
+    <string name="nav_battle">Battle</string>
+    <string name="nav_settings">Settings</string>
+    
+    <!-- Team Management -->
+    <string name="team_management">Team Management</string>
+    <string name="create_team">Create Team</string>
+    <string name="edit_team">Edit Team</string>
+    <string name="delete_team">Delete Team</string>
+    <string name="team_name">Team Name</string>
+    <string name="select_servants">Select Servants</string>
+    <string name="select_craft_essences">Select Craft Essences</string>
+    
+    <!-- Quest Selection -->
+    <string name="quest_selection">Quest Selection</string>
+    <string name="daily_quests">Daily Quests</string>
+    <string name="story_quests">Story Quests</string>
+    <string name="event_quests">Event Quests</string>
+    <string name="free_quests">Free Quests</string>
+    
+    <!-- Battle Automation -->
+    <string name="battle_automation">Battle Automation</string>
+    <string name="start_automation">Start Automation</string>
+    <string name="stop_automation">Stop Automation</string>
+    <string name="pause_automation">Pause Automation</string>
+    <string name="battle_status">Battle Status</string>
+    <string name="automation_running">Automation Running</string>
+    <string name="automation_stopped">Automation Stopped</string>
+    <string name="automation_paused">Automation Paused</string>
+    
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="automation_settings">Automation Settings</string>
+    <string name="performance_settings">Performance Settings</string>
+    <string name="data_settings">Data Settings</string>
+    <string name="about">About</string>
+    
+    <!-- Accessibility Service -->
+    <string name="accessibility_service_name">FGO Bot Accessibility Service</string>
+    <string name="accessibility_service_description">Allows FGO Bot to automate gameplay by reading screen content and performing actions</string>
+    
+    <!-- Error Messages -->
+    <string name="error_network">Network error occurred</string>
+    <string name="error_database">Database error occurred</string>
+    <string name="error_permission">Permission required</string>
+    <string name="error_accessibility_not_enabled">Accessibility service not enabled</string>
+    <string name="error_unknown">An unknown error occurred</string>
+    
+    <!-- Success Messages -->
+    <string name="success_team_saved">Team saved successfully</string>
+    <string name="success_data_synced">Data synchronized successfully</string>
+    <string name="success_automation_started">Automation started successfully</string>
+    
+    <!-- Common Actions -->
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_sync">Sync</string>
+    <string name="action_ok">OK</string>
+    <string name="action_yes">Yes</string>
+    <string name="action_no">No</string>
+    
+    <!-- Loading States -->
+    <string name="loading">Loading…</string>
+    <string name="loading_servants">Loading servants…</string>
+    <string name="loading_quests">Loading quests…</string>
+    <string name="loading_battle_data">Loading battle data…</string>
+    
+    <!-- Empty States -->
+    <string name="empty_teams">No teams created yet</string>
+    <string name="empty_quests">No quests available</string>
+    <string name="empty_battle_logs">No battle logs available</string>
+    
+</resources> 

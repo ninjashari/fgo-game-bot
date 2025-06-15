@@ -6,15 +6,15 @@ FGO Bot is an Android application that automates gameplay in Fate/Grand Order (F
 ## 2. Functional Requirements
 
 ### 2.1 Data Management
-- [x] Integrate with Atlas Academy API for game data (API interface ready)
-- [x] Maintain local database using Room Database (SQLite) with:
-  - [x] Servants table (stats, skills, NP effects, rarity, class)
-  - [x] Craft Essences table (effects, stats, rarity, type)
-  - [x] Command Cards table (effects, damage multipliers, card type)
-  - [x] User's inventory table (owned servants/CEs with levels)
-  - [x] Quest information table (enemy data, requirements, rewards)
-  - [x] Team configurations table (saved team setups)
-  - [x] Battle logs table (performance tracking, win/loss records)
+- [ ] Integrate with Atlas Academy API for game data (API interface ready)
+- [ ] Maintain local database using Room Database (SQLite) with:
+  - [ ] Servants table (stats, skills, NP effects, rarity, class)
+  - [ ] Craft Essences table (effects, stats, rarity, type)
+  - [ ] Command Cards table (effects, damage multipliers, card type)
+  - [ ] User's inventory table (owned servants/CEs with levels)
+  - [ ] Quest information table (enemy data, requirements, rewards)
+  - [ ] Team configurations table (saved team setups)
+  - [ ] Battle logs table (performance tracking, win/loss records)
 - [ ] Implement in-memory caching layer for frequently accessed data
 - [ ] Implement data synchronization system with Atlas Academy API
 - [ ] Cache frequently accessed data using LruCache
@@ -40,8 +40,8 @@ FGO Bot is an Android application that automates gameplay in Fate/Grand Order (F
 - [ ] Battle logging
 
 ### 2.4 User Interface
-- [x] Basic UI framework with Jetpack Compose
-- [x] Reusable UI components (ServantCard, TeamConfigCard)
+- [ ] Basic UI framework with Jetpack Compose
+- [ ] Reusable UI components (ServantCard, TeamConfigCard)
 - [ ] Team management interface
 - [ ] Quest selection screen
 - [ ] Battle monitoring
@@ -100,23 +100,23 @@ FGO Bot is an Android application that automates gameplay in Fate/Grand Order (F
 - JDK 11+
 
 ### 4.2 Dependencies
-- [x] AndroidX libraries
-- [x] Room Database (SQLite wrapper)
-- [x] Room KTX (Kotlin extensions)
-- [x] Room compiler (annotation processing)
-- [x] Retrofit (API communication)
-- [x] Gson (JSON parsing)
-- [x] OkHttp (HTTP client)
-- [x] Coroutines (async operations)
-- [x] Jetpack Compose (UI framework)
+- [ ] AndroidX libraries
+- [ ] Room Database (SQLite wrapper)
+- [ ] Room KTX (Kotlin extensions)
+- [ ] Room compiler (annotation processing)
+- [ ] Retrofit (API communication)
+- [ ] Gson (JSON parsing)
+- [ ] OkHttp (HTTP client)
+- [ ] Coroutines (async operations)
+- [ ] Jetpack Compose (UI framework)
 - [ ] OpenCV (image processing)
 - [ ] ML Kit (text recognition)
 - [ ] TensorFlow Lite (custom models)
 - [ ] Collection KTX (caching utilities)
 
 ### 4.3 Testing Requirements
-- [x] Unit tests (foundation implemented)
-- [x] Testing framework setup (JUnit, Room testing, Coroutines testing)
+- [ ] Unit tests (foundation implemented)
+- [ ] Testing framework setup (JUnit, Room testing, Coroutines testing)
 - [ ] Integration tests
 - [ ] UI tests
 - [ ] Performance tests
@@ -132,15 +132,15 @@ FGO Bot is an Android application that automates gameplay in Fate/Grand Order (F
 ## 6. Implementation Status
 
 ### 6.1 Completed Components (Phase 1)
-- [x] **Project Structure**: Clean Architecture with MVVM pattern
-- [x] **Database Layer**: Complete Room database with 5 entities and DAOs
-- [x] **API Layer**: Atlas Academy API interface and response models
-- [x] **Error Handling**: Comprehensive exception hierarchy
-- [x] **Logging System**: Structured logging with performance tracking
-- [x] **UI Foundation**: Jetpack Compose with reusable components
-- [x] **Testing Framework**: Unit tests for core components
-- [x] **Build System**: Gradle 8.9 with proper dependencies
-- [x] **Accessibility Service**: Basic service for automation
+- [ ] **Project Structure**: Clean Architecture with MVVM pattern
+- [ ] **Database Layer**: Complete Room database with 5 entities and DAOs
+- [ ] **API Layer**: Atlas Academy API interface and response models
+- [ ] **Error Handling**: Comprehensive exception hierarchy
+- [ ] **Logging System**: Structured logging with performance tracking
+- [ ] **UI Foundation**: Jetpack Compose with reusable components
+- [ ] **Testing Framework**: Unit tests for core components
+- [ ] **Build System**: Gradle 8.9 with proper dependencies
+- [ ] **Accessibility Service**: Basic service for automation
 
 ### 6.2 Code Metrics
 - **Total Kotlin Files**: 24

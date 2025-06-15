@@ -135,3 +135,5 @@ Thumbs.db
 
 # Gradle Wrapper (keep the jar)
 !gradle/wrapper/gradle-wrapper.jar 
+
+.cursorrules

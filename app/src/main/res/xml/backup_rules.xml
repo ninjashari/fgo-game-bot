@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    FGO Bot - Backup Rules Configuration
+    
+    This file defines which data should be included or excluded from
+    Android's automatic backup system.
+-->
+<full-backup-content>
+    <!-- Include user preferences and team configurations -->
+    <include domain="sharedpref" path="." />
+    
+    <!-- Include database files -->
+    <include domain="database" path="fgo_bot_database" />
+    
+    <!-- Exclude sensitive files -->
+    <exclude domain="sharedpref" path="api_keys.xml" />
+    <exclude domain="database" path="temp_cache.db" />
+    
+    <!-- Exclude cache directories -->
+    <exclude domain="cache" path="." />
+</full-backup-content> 

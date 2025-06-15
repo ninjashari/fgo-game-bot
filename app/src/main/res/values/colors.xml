@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    FGO Bot - Color Resources
+    
+    This file defines the color palette used throughout the application
+    following Material Design 3 guidelines.
+-->
+<resources>
+    <!-- Primary Colors -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    
+    <!-- Secondary Colors -->
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    
+    <!-- Neutral Colors -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="gray_50">#FFFAFAFA</color>
+    <color name="gray_100">#FFF5F5F5</color>
+    <color name="gray_200">#FFEEEEEE</color>
+    <color name="gray_300">#FFE0E0E0</color>
+    <color name="gray_400">#FFBDBDBD</color>
+    <color name="gray_500">#FF9E9E9E</color>
+    <color name="gray_600">#FF757575</color>
+    <color name="gray_700">#FF616161</color>
+    <color name="gray_800">#FF424242</color>
+    <color name="gray_900">#FF212121</color>
+    
+    <!-- FGO Theme Colors -->
+    <color name="fgo_blue">#FF1976D2</color>
+    <color name="fgo_blue_dark">#FF0D47A1</color>
+    <color name="fgo_gold">#FFFFC107</color>
+    <color name="fgo_gold_dark">#FFFF8F00</color>
+    <color name="fgo_red">#FFD32F2F</color>
+    <color name="fgo_red_dark">#FFB71C1C</color>
+    <color name="fgo_green">#FF388E3C</color>
+    <color name="fgo_green_dark">#FF1B5E20</color>
+    
+    <!-- Status Colors -->
+    <color name="success">#FF4CAF50</color>
+    <color name="warning">#FFFF9800</color>
+    <color name="error">#FFF44336</color>
+    <color name="info">#FF2196F3</color>
+    
+    <!-- Card Rarity Colors (for servant/CE cards) -->
+    <color name="rarity_1_bronze">#FFCD7F32</color>
+    <color name="rarity_2_bronze">#FFCD7F32</color>
+    <color name="rarity_3_silver">#FFC0C0C0</color>
+    <color name="rarity_4_gold">#FFFFD700</color>
+    <color name="rarity_5_gold">#FFFFD700</color>
+    
+    <!-- Background Colors -->
+    <color name="background_light">#FFFFFFFF</color>
+    <color name="background_dark">#FF121212</color>
+    <color name="surface_light">#FFFFFFFF</color>
+    <color name="surface_dark">#FF1E1E1E</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary_light">#FF000000</color>
+    <color name="text_primary_dark">#FFFFFFFF</color>
+    <color name="text_secondary_light">#FF757575</color>
+    <color name="text_secondary_dark">#FFBDBDBD</color>
+    
+</resources> 
