@@ -65,6 +65,7 @@ sealed class AutomationAction {
     object ClearError : AutomationAction()
     data class InitializeAutomation(val resultCode: Int, val data: Intent) : AutomationAction()
     object RequestScreenCapturePermission : AutomationAction()
+    object OpenAccessibilitySettings : AutomationAction()
 }
 
 /**
@@ -86,6 +87,9 @@ class AutomationViewModel(
     
     // Screen capture permission launcher
     private var screenCapturePermissionLauncher: ((Intent) -> Unit)? = null
+    
+    // Accessibility settings launcher
+    private var accessibilitySettingsLauncher: (() -> Unit)? = null
     
     // MediaProjection manager
     private val mediaProjectionManager = application.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
@@ -116,6 +120,13 @@ class AutomationViewModel(
     }
     
     /**
+     * Set accessibility settings launcher
+     */
+    fun setAccessibilitySettingsLauncher(launcher: () -> Unit) {
+        accessibilitySettingsLauncher = launcher
+    }
+    
+    /**
      * Initialize the ViewModel with initial data
      */
     private suspend fun initializeViewModel() {
@@ -126,7 +137,14 @@ class AutomationViewModel(
             updatePermissionStatus()
             
             // Load available teams
-            val teams = teamRepository.getAllTeams().first()
+            var teams = teamRepository.getAllTeams().first()
+            
+            // Create a default test team if no teams exist
+            if (teams.isEmpty()) {
+                createDefaultTestTeam()
+                // Reload teams after creating default team
+                teams = teamRepository.getAllTeams().first()
+            }
             
             // Load recent battle logs
             val recentLogs = battleLogRepository.getAllBattleLogs().first().take(10)
@@ -149,15 +167,40 @@ class AutomationViewModel(
     }
     
     /**
+     * Creates a default test team for immediate testing
+     */
+    private suspend fun createDefaultTestTeam() {
+        try {
+            val defaultTeam = Team(
+                id = 0, // Auto-generated
+                name = "Default Test Team",
+                description = "Auto-created team for testing automation",
+                servantIds = listOf(1, 2, 3), // Placeholder servant IDs
+                craftEssenceIds = listOf(1, 2, 3), // Placeholder CE IDs
+                supportServantClass = "Any",
+                supportCraftEssence = "Any",
+                strategy = "Auto",
+                isDefault = true
+            )
+            
+            val result = teamRepository.createTeam(defaultTeam)
+            if (result.isSuccess) {
+                logger.info(FGOBotLogger.Category.UI, "Created default test team for automation testing")
+            }
+        } catch (e: Exception) {
+            logger.warn(FGOBotLogger.Category.UI, "Failed to create default test team", e)
+            // Don't fail initialization if we can't create the test team
+        }
+    }
+    
+    /**
      * Update all permission statuses
      */
     fun updatePermissionStatus() {
         val isAccessibilityEnabled = FGOAccessibilityService.isServiceRunning()
-        val isScreenCaptureGranted = _uiState.value.isInitialized // Screen capture is granted if automation is initialized
         
         _uiState.value = _uiState.value.copy(
-            isAccessibilityServiceEnabled = isAccessibilityEnabled,
-            isScreenCapturePermissionGranted = isScreenCaptureGranted
+            isAccessibilityServiceEnabled = isAccessibilityEnabled
         )
         
         // Initialize automation controller when accessibility service becomes available
@@ -230,6 +273,7 @@ class AutomationViewModel(
                     is AutomationAction.ClearError -> clearError()
                     is AutomationAction.InitializeAutomation -> initializeAutomation(action.resultCode, action.data)
                     is AutomationAction.RequestScreenCapturePermission -> requestScreenCapturePermission()
+                    is AutomationAction.OpenAccessibilitySettings -> openAccessibilitySettings()
                 }
             } catch (e: Exception) {
                 logger.error(FGOBotLogger.Category.UI, "Error handling action: $action", e)
@@ -336,6 +380,7 @@ class AutomationViewModel(
             val success = controller.initialize(resultCode, data)
             _uiState.value = _uiState.value.copy(
                 isInitialized = success,
+                isScreenCapturePermissionGranted = success,
                 isLoading = false,
                 errorMessage = if (!success) "Failed to initialize automation" else null
             )
@@ -350,6 +395,7 @@ class AutomationViewModel(
             logger.error(FGOBotLogger.Category.UI, "Error during automation initialization", e)
             _uiState.value = _uiState.value.copy(
                 isInitialized = false,
+                isScreenCapturePermissionGranted = false,
                 isLoading = false,
                 errorMessage = "Initialization error: ${e.message}"
             )
@@ -448,5 +494,18 @@ class AutomationViewModel(
      */
     fun canResumeAutomation(): Boolean {
         return _uiState.value.automationState == AutomationState.PAUSED
+    }
+    
+    /**
+     * Open accessibility settings
+     */
+    private fun openAccessibilitySettings() {
+        try {
+            accessibilitySettingsLauncher?.invoke()
+            logger.info(FGOBotLogger.Category.UI, "Accessibility settings opened")
+        } catch (e: Exception) {
+            logger.error(FGOBotLogger.Category.UI, "Error opening accessibility settings", e)
+            _uiState.value = _uiState.value.copy(errorMessage = "Failed to open accessibility settings: ${e.message}")
+        }
     }
 } 

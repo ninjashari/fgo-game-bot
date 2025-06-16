@@ -56,7 +56,8 @@ import com.fgobot.presentation.viewmodel.AutomationUiState
 fun AutomationScreen(
     viewModel: AutomationViewModel,
     onNavigateToTeams: () -> Unit = {},
-    onNavigateToSettings: () -> Unit = {}
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToPermissions: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedTeam by viewModel.selectedTeam.collectAsStateWithLifecycle()
@@ -86,6 +87,14 @@ fun AutomationScreen(
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Permission management card (shown when permissions are missing)
+            item {
+                PermissionManagementCard(
+                    uiState = uiState,
+                    onNavigateToPermissions = onNavigateToPermissions
+                )
+            }
+            
             // Control panel
             item {
                 AutomationControlPanel(
@@ -101,6 +110,8 @@ fun AutomationScreen(
                     onStopAutomation = { viewModel.handleAction(AutomationAction.StopAutomation) },
                     onPauseAutomation = { viewModel.handleAction(AutomationAction.PauseAutomation) },
                     onResumeAutomation = { viewModel.handleAction(AutomationAction.ResumeAutomation) },
+                    onRequestScreenCapturePermission = { viewModel.handleAction(AutomationAction.RequestScreenCapturePermission) },
+                    onOpenAccessibilitySettings = { viewModel.handleAction(AutomationAction.OpenAccessibilitySettings) },
                     canStart = viewModel.canStartAutomation(),
                     canStop = viewModel.canStopAutomation(),
                     canPause = viewModel.canPauseAutomation(),
@@ -235,6 +246,8 @@ private fun AutomationControlPanel(
     onStopAutomation: () -> Unit,
     onPauseAutomation: () -> Unit,
     onResumeAutomation: () -> Unit,
+    onRequestScreenCapturePermission: () -> Unit,
+    onOpenAccessibilitySettings: () -> Unit,
     canStart: Boolean,
     canStop: Boolean,
     canPause: Boolean,
@@ -253,8 +266,13 @@ private fun AutomationControlPanel(
                 fontWeight = FontWeight.Bold
             )
             
-            // Status indicators
-            AutomationStatusIndicators(uiState = uiState, selectedTeam = selectedTeam)
+            // Status indicators with permission actions
+            AutomationStatusIndicators(
+                uiState = uiState, 
+                selectedTeam = selectedTeam,
+                onRequestScreenCapturePermission = onRequestScreenCapturePermission,
+                onOpenAccessibilitySettings = onOpenAccessibilitySettings
+            )
             
             // Control buttons
             Row(
@@ -327,30 +345,36 @@ private fun AutomationControlPanel(
 }
 
 /**
- * Automation status indicators
+ * Automation status indicators with permission management
  */
 @Composable
 private fun AutomationStatusIndicators(
     uiState: AutomationUiState,
-    selectedTeam: Team?
+    selectedTeam: Team?,
+    onRequestScreenCapturePermission: () -> Unit,
+    onOpenAccessibilitySettings: () -> Unit
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // Accessibility service status
-        StatusIndicatorRow(
+        StatusIndicatorRowWithAction(
             label = "Accessibility Service",
             isActive = uiState.isAccessibilityServiceEnabled,
             activeText = "Enabled",
-            inactiveText = "Disabled"
+            inactiveText = "Disabled",
+            actionText = if (!uiState.isAccessibilityServiceEnabled) "Enable" else null,
+            onActionClick = onOpenAccessibilitySettings
         )
         
         // Screen capture permission status
-        StatusIndicatorRow(
+        StatusIndicatorRowWithAction(
             label = "Screen Capture",
             isActive = uiState.isScreenCapturePermissionGranted,
             activeText = "Permitted",
-            inactiveText = "Not Permitted"
+            inactiveText = "Not Permitted",
+            actionText = if (!uiState.isScreenCapturePermissionGranted) "Grant" else null,
+            onActionClick = onRequestScreenCapturePermission
         )
         
         // Team selection status
@@ -364,7 +388,60 @@ private fun AutomationStatusIndicators(
 }
 
 /**
- * Status indicator row
+ * Status indicator row with optional action button
+ */
+@Composable
+private fun StatusIndicatorRowWithAction(
+    label: String,
+    isActive: Boolean,
+    activeText: String,
+    inactiveText: String,
+    actionText: String? = null,
+    onActionClick: () -> Unit = {}
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f)
+        )
+        
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            StatusIndicator(
+                isActive = isActive,
+                color = if (isActive) Color.Green else Color.Red
+            )
+            
+            Text(
+                text = if (isActive) activeText else inactiveText,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isActive) 
+                    MaterialTheme.colorScheme.primary 
+                else 
+                    MaterialTheme.colorScheme.error,
+                modifier = Modifier.widthIn(min = 80.dp)
+            )
+            
+            // Action button for inactive states
+            if (!isActive && actionText != null) {
+                FGOBotTextButton(
+                    text = actionText,
+                    onClick = onActionClick
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Simple status indicator row without action button
  */
 @Composable
 private fun StatusIndicatorRow(
@@ -412,7 +489,7 @@ private fun getStatusMessage(uiState: AutomationUiState, selectedTeam: Team?): S
         !uiState.isAccessibilityServiceEnabled -> 
             "⚠️ Please enable accessibility service in Settings"
         !uiState.isScreenCapturePermissionGranted -> 
-            "⚠️ Screen capture permission required - tap Start to grant"
+            "⚠️ Screen capture permission required"
         selectedTeam == null -> 
             "⚠️ Please select a team to start automation"
         else -> 
@@ -819,6 +896,67 @@ private fun AutomationScreenPreview() {
             contentAlignment = Alignment.Center
         ) {
             Text("Automation Screen Preview")
+        }
+    }
+}
+
+/**
+ * Permission management card
+ */
+@Composable
+private fun PermissionManagementCard(
+    uiState: AutomationUiState,
+    onNavigateToPermissions: () -> Unit
+) {
+    val hasAllPermissions = uiState.isAccessibilityServiceEnabled && uiState.isScreenCapturePermissionGranted
+    
+    if (!hasAllPermissions) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    
+                    Text(
+                        text = "Permissions Required",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = "Some required permissions are missing. Grant them to enable automation.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                FGOBotPrimaryButton(
+                    text = "Manage Permissions",
+                    onClick = onNavigateToPermissions,
+                    fillMaxWidth = true
+                )
+            }
         }
     }
 } 

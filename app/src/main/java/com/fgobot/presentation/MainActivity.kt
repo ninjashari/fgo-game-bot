@@ -100,6 +100,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val accessibilitySettingsLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        // Update ViewModel with permission status after returning from settings
+        automationViewModel.updatePermissionStatus()
+        logger.info(FGOBotLogger.Category.GENERAL, "Returned from accessibility settings")
+    }
+
     /**
      * Called when the activity is first created.
      * Sets up the Compose UI with the FGO Bot theme and navigation.
@@ -129,6 +137,12 @@ class MainActivity : ComponentActivity() {
         // Set screen capture permission launcher
         automationViewModel.setScreenCapturePermissionLauncher { intent ->
             screenCapturePermissionLauncher.launch(intent)
+        }
+        
+        // Set accessibility settings launcher
+        automationViewModel.setAccessibilitySettingsLauncher {
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            accessibilitySettingsLauncher.launch(intent)
         }
         
         setContent {
