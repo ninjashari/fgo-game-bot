@@ -292,19 +292,73 @@ class AutomationController(
             }
             
             lastScreenshot = captureResult.bitmap
-            updateStats { it.copy(screenshotsTaken = it.screenshotsTaken + 1) }
+            _automationStats.value = _automationStats.value.copy(screenshotsTaken = _automationStats.value.screenshotsTaken + 1)
             
-            // Make decision
-            val team = _currentTeam.value ?: return false
-            val decision = decisionEngine.makeDecision(captureResult.bitmap, team)
-            updateStats { it.copy(decisionsExecuted = it.decisionsExecuted + 1) }
+            // Detect current battle state
+            val battleState = imageRecognition.detectBattleState(captureResult.bitmap)
+            logger.debug(FGOBotLogger.Category.AUTOMATION, "Detected battle state: $battleState")
             
-            // Execute decision
-            val executionResult = executeDecision(decision)
-            
-            if (!executionResult) {
-                logger.warn(FGOBotLogger.Category.AUTOMATION, "Failed to execute decision: $decision")
-                return false
+            // Handle different battle states
+            when (battleState) {
+                BattleState.COMMAND_SELECTION -> {
+                    // In battle - make tactical decisions
+                    val team = _currentTeam.value ?: return false
+                    val decision = decisionEngine.makeDecision(captureResult.bitmap, team)
+                    _automationStats.value = _automationStats.value.copy(decisionsExecuted = _automationStats.value.decisionsExecuted + 1)
+                    
+                    val executionResult = executeDecision(decision)
+                    if (!executionResult) {
+                        logger.warn(FGOBotLogger.Category.AUTOMATION, "Failed to execute decision: $decision")
+                        return false
+                    }
+                }
+                
+                BattleState.BATTLE_RESULT -> {
+                    // Battle completed - handle results
+                    handleBattleResult(captureResult.bitmap)
+                }
+                
+                BattleState.AP_RECOVERY -> {
+                    // Need AP recovery
+                    handleAPRecovery(captureResult.bitmap)
+                }
+                
+                BattleState.QUEST_SELECTION -> {
+                    // Select quest to repeat
+                    handleQuestSelection(captureResult.bitmap)
+                }
+                
+                BattleState.SUPPORT_SELECTION -> {
+                    // Wait for support selection or auto-select
+                    inputController.humanDelay(2000L)
+                }
+                
+                BattleState.BATTLE_START -> {
+                    // Wait for battle to start
+                    inputController.humanDelay(2000L)
+                }
+                
+                BattleState.SKILL_SELECTION -> {
+                    // Handle skill selection screen
+                    inputController.humanDelay(1000L)
+                }
+                
+                BattleState.NP_SELECTION -> {
+                    // Handle NP selection screen
+                    inputController.humanDelay(1000L)
+                }
+                
+                BattleState.ERROR_STATE -> {
+                    // Handle error state
+                    logger.warn(FGOBotLogger.Category.AUTOMATION, "Error state detected")
+                    handleErrorState(captureResult.bitmap)
+                }
+                
+                BattleState.UNKNOWN -> {
+                    // Unknown state - wait and retry
+                    logger.debug(FGOBotLogger.Category.AUTOMATION, "Unknown state - waiting")
+                    inputController.humanDelay(1000L)
+                }
             }
             
             true
@@ -312,6 +366,68 @@ class AutomationController(
             logger.error(FGOBotLogger.Category.AUTOMATION, "Error in automation cycle", e)
             false
         }
+    }
+    
+    /**
+     * Handles battle result screen
+     */
+    private suspend fun handleBattleResult(screenshot: Bitmap?) {
+        logger.info(FGOBotLogger.Category.AUTOMATION, "Handling battle result")
+        
+        // For now, assume victory (can be enhanced with actual detection)
+        val isVictory = true // TODO: Implement actual victory detection
+        
+        if (isVictory) {
+            _automationStats.value = _automationStats.value.copy(
+                battlesWon = _automationStats.value.battlesWon + 1, 
+                battlesCompleted = _automationStats.value.battlesCompleted + 1
+            )
+            logger.info(FGOBotLogger.Category.AUTOMATION, "Battle won!")
+        } else {
+            _automationStats.value = _automationStats.value.copy(
+                battlesLost = _automationStats.value.battlesLost + 1, 
+                battlesCompleted = _automationStats.value.battlesCompleted + 1
+            )
+            logger.info(FGOBotLogger.Category.AUTOMATION, "Battle lost")
+        }
+        
+        // Tap center of screen to continue through result screens
+        inputController.tap(android.graphics.Point(540, 960))
+        inputController.humanDelay(2000L)
+    }
+    
+    /**
+     * Handles AP recovery screen
+     */
+    private suspend fun handleAPRecovery(screenshot: Bitmap?) {
+        logger.info(FGOBotLogger.Category.AUTOMATION, "Handling AP recovery")
+        
+        // For now, stop automation when AP runs out
+        // This can be enhanced to use AP items or wait for natural recovery
+        logger.warn(FGOBotLogger.Category.AUTOMATION, "AP depleted - stopping automation")
+        _automationState.value = AutomationState.COMPLETED
+    }
+    
+    /**
+     * Handles quest selection screen
+     */
+    private suspend fun handleQuestSelection(screenshot: Bitmap?) {
+        logger.info(FGOBotLogger.Category.AUTOMATION, "Handling quest selection")
+        
+        // For now, tap center-right area where repeat button usually is
+        inputController.tap(android.graphics.Point(800, 1600))
+        inputController.humanDelay(1500L)
+    }
+    
+    /**
+     * Handles error states
+     */
+    private suspend fun handleErrorState(screenshot: Bitmap?) {
+        logger.warn(FGOBotLogger.Category.AUTOMATION, "Handling error state")
+        
+        // Try tapping center of screen to dismiss dialogs
+        inputController.tap(android.graphics.Point(540, 960))
+        inputController.humanDelay(2000L)
     }
     
     /**
@@ -357,11 +473,31 @@ class AutomationController(
     private suspend fun executeCardSelection(decision: DecisionResult.CardSelection): Boolean {
         logger.info(FGOBotLogger.Category.AUTOMATION, "Executing card selection: ${decision.cardIndices}")
         
-        // For now, just add a delay to simulate card selection
-        // This will be enhanced with actual card tapping
-        inputController.humanDelay(1000L)
-        
-        return true
+        return try {
+            // For now, use predefined card positions (can be enhanced with actual detection)
+            val cardPositions = listOf(
+                android.graphics.Point(200, 1400),  // Card 1
+                android.graphics.Point(540, 1400),  // Card 2
+                android.graphics.Point(880, 1400)   // Card 3
+            )
+            
+            // Tap selected cards in order
+            for (cardIndex in decision.cardIndices) {
+                if (cardIndex < cardPositions.size) {
+                    val position = cardPositions[cardIndex]
+                    inputController.tap(position)
+                    inputController.humanDelay(300L) // Delay between card taps
+                }
+            }
+            
+            // Wait for attack animation
+            inputController.humanDelay(2000L)
+            true
+            
+        } catch (e: Exception) {
+            logger.error(FGOBotLogger.Category.AUTOMATION, "Error executing card selection", e)
+            false
+        }
     }
     
     /**
@@ -370,10 +506,53 @@ class AutomationController(
     private suspend fun executeSkillUsage(decision: DecisionResult.SkillUsage): Boolean {
         logger.info(FGOBotLogger.Category.AUTOMATION, "Executing skill usage: Servant ${decision.servantIndex}, Skill ${decision.skillIndex}")
         
-        // Placeholder implementation
-        inputController.humanDelay(500L)
-        
-        return true
+        return try {
+            // For now, use predefined skill positions (3 skills per servant, 3 servants)
+            val skillPositions = listOf(
+                // Servant 1 skills
+                android.graphics.Point(150, 1100), android.graphics.Point(250, 1100), android.graphics.Point(350, 1100),
+                // Servant 2 skills  
+                android.graphics.Point(450, 1100), android.graphics.Point(550, 1100), android.graphics.Point(650, 1100),
+                // Servant 3 skills
+                android.graphics.Point(750, 1100), android.graphics.Point(850, 1100), android.graphics.Point(950, 1100)
+            )
+            
+            // Calculate skill button index (3 skills per servant)
+            val skillButtonIndex = (decision.servantIndex * 3) + decision.skillIndex
+            
+            if (skillButtonIndex < skillPositions.size) {
+                val position = skillPositions[skillButtonIndex]
+                inputController.tap(position)
+                
+                // Wait for skill animation
+                inputController.humanDelay(1500L)
+                
+                // Handle target selection if needed
+                decision.targetIndex?.let { targetIndex ->
+                    if (targetIndex >= 0) {
+                        val targetPositions = listOf(
+                            android.graphics.Point(200, 800),  // Target 1
+                            android.graphics.Point(540, 800),  // Target 2
+                            android.graphics.Point(880, 800)   // Target 3
+                        )
+                        if (targetIndex < targetPositions.size) {
+                            val targetPosition = targetPositions[targetIndex]
+                            inputController.tap(targetPosition)
+                            inputController.humanDelay(500L)
+                        }
+                    }
+                }
+                
+                true
+            } else {
+                logger.warn(FGOBotLogger.Category.AUTOMATION, "Invalid skill button index: $skillButtonIndex")
+                false
+            }
+            
+        } catch (e: Exception) {
+            logger.error(FGOBotLogger.Category.AUTOMATION, "Error executing skill usage", e)
+            false
+        }
     }
     
     /**
@@ -382,10 +561,31 @@ class AutomationController(
     private suspend fun executeNPUsage(decision: DecisionResult.NPUsage): Boolean {
         logger.info(FGOBotLogger.Category.AUTOMATION, "Executing NP usage: Servant ${decision.servantIndex}")
         
-        // Placeholder implementation
-        inputController.humanDelay(1000L)
-        
-        return true
+        return try {
+            // For now, use predefined NP positions (3 servants)
+            val npPositions = listOf(
+                android.graphics.Point(200, 950),  // Servant 1 NP
+                android.graphics.Point(540, 950),  // Servant 2 NP
+                android.graphics.Point(880, 950)   // Servant 3 NP
+            )
+            
+            if (decision.servantIndex < npPositions.size) {
+                val position = npPositions[decision.servantIndex]
+                inputController.tap(position)
+                
+                // Wait for NP selection confirmation
+                inputController.humanDelay(1000L)
+                
+                true
+            } else {
+                logger.warn(FGOBotLogger.Category.AUTOMATION, "Invalid NP servant index: ${decision.servantIndex}")
+                false
+            }
+            
+        } catch (e: Exception) {
+            logger.error(FGOBotLogger.Category.AUTOMATION, "Error executing NP usage", e)
+            false
+        }
     }
     
     /**
@@ -410,13 +610,6 @@ class AutomationController(
         }
         
         return true
-    }
-    
-    /**
-     * Updates automation statistics
-     */
-    private fun updateStats(update: (AutomationStats) -> AutomationStats) {
-        _automationStats.value = update(_automationStats.value)
     }
     
     /**

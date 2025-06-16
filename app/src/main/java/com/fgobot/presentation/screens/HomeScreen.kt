@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.fgobot.R
 import com.fgobot.presentation.components.*
 import com.fgobot.presentation.theme.FGOBotTheme
+import kotlinx.coroutines.delay
 
 /**
  * Home screen composable
@@ -226,6 +227,17 @@ private fun QuickActionButton(
  */
 @Composable
 private fun SystemStatusCard() {
+    // Check accessibility service status dynamically
+    val isAccessibilityEnabled = remember { mutableStateOf(false) }
+    
+    // Update accessibility status periodically
+    LaunchedEffect(Unit) {
+        while (true) {
+            isAccessibilityEnabled.value = com.fgobot.core.FGOAccessibilityService.isServiceRunning()
+            delay(2000L) // Check every 2 seconds
+        }
+    }
+    
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -241,8 +253,8 @@ private fun SystemStatusCard() {
             
             StatusItem(
                 label = "Accessibility Service",
-                status = "Enabled", // This would be dynamic in real implementation
-                isGood = true
+                status = if (isAccessibilityEnabled.value) "Enabled" else "Disabled",
+                isGood = isAccessibilityEnabled.value
             )
             
             StatusItem(
