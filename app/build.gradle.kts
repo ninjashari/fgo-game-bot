@@ -138,7 +138,8 @@ dependencies {
     // implementation("com.google.dagger:hilt-android:2.48.1")
     // kapt("com.google.dagger:hilt-compiler:2.48.1")
 
-    // Image Processing (for future screen capture functionality)
+    // Image Processing (for screen capture functionality)
+    // Note: OpenCV will be added as a local module in Phase 4
     // implementation("org.opencv:opencv-android:4.8.0")
 
     // Machine Learning (for future text recognition)
