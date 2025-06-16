@@ -172,26 +172,21 @@ class MainActivity : ComponentActivity() {
     
     // TODO: Replace with proper dependency injection
     private fun createPlaceholderTeamRepository(): TeamRepository {
-        // This is a placeholder - in a real implementation, this would be injected
-        return object : TeamRepository {
-            override fun getAllTeams() = kotlinx.coroutines.flow.flowOf(emptyList<com.fgobot.data.database.entities.Team>())
-            override suspend fun getTeamById(teamId: Long) = null
-            override suspend fun createTeam(team: com.fgobot.data.database.entities.Team) = Result.success(0L)
-            override suspend fun updateTeam(team: com.fgobot.data.database.entities.Team) = Result.success(Unit)
-            override suspend fun deleteTeam(teamId: Long) = Result.success(Unit)
-            override suspend fun getTeamStats() = com.fgobot.data.repository.TeamStats(0)
-        }
+        // Create real database implementation
+        val database = com.fgobot.data.database.FGOBotDatabase.getDatabase(this)
+        val teamDao = database.teamDao()
+        val logger = com.fgobot.core.logging.FGOLoggerImpl()
+        
+        return com.fgobot.data.repository.TeamRepositoryImpl(teamDao, logger)
     }
     
     private fun createPlaceholderBattleLogRepository(): BattleLogRepository {
-        // This is a placeholder - in a real implementation, this would be injected
-        return object : BattleLogRepository {
-            override fun getAllBattleLogs() = kotlinx.coroutines.flow.flowOf(emptyList<com.fgobot.data.database.entities.BattleLog>())
-            override suspend fun getBattleLogById(battleLogId: Long) = null
-            override fun getBattleLogsByQuest(questId: Int) = kotlinx.coroutines.flow.flowOf(emptyList<com.fgobot.data.database.entities.BattleLog>())
-            override suspend fun recordBattleLog(battleLog: com.fgobot.data.database.entities.BattleLog) = Result.success(0L)
-            override suspend fun getBattleAnalytics() = com.fgobot.data.repository.BattleAnalytics(0, 0, 0.0, 0L)
-        }
+        // Create real database implementation
+        val database = com.fgobot.data.database.FGOBotDatabase.getDatabase(this)
+        val battleLogDao = database.battleLogDao()
+        val logger = com.fgobot.core.logging.FGOLoggerImpl()
+        
+        return com.fgobot.data.repository.BattleLogRepositoryImpl(battleLogDao, logger)
     }
 }
 

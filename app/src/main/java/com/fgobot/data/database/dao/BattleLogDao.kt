@@ -159,7 +159,7 @@ interface BattleLogDao {
      * 
      * @return Flow of successful battle logs
      */
-    @Query("SELECT * FROM battle_logs WHERE isVictory = 1 ORDER BY timestamp DESC")
+    @Query("SELECT * FROM battle_logs WHERE result = 'Victory' ORDER BY timestamp DESC")
     fun getSuccessfulBattleLogs(): Flow<List<BattleLog>>
     
     /**
@@ -167,7 +167,7 @@ interface BattleLogDao {
      * 
      * @return Flow of failed battle logs
      */
-    @Query("SELECT * FROM battle_logs WHERE isVictory = 0 ORDER BY timestamp DESC")
+    @Query("SELECT * FROM battle_logs WHERE result = 'Defeat' ORDER BY timestamp DESC")
     fun getFailedBattleLogs(): Flow<List<BattleLog>>
     
     /**
@@ -187,7 +187,7 @@ interface BattleLogDao {
      * @param maxDuration Maximum battle duration in seconds
      * @return Flow of battle logs within the duration range
      */
-    @Query("SELECT * FROM battle_logs WHERE battleDuration BETWEEN :minDuration AND :maxDuration ORDER BY timestamp DESC")
+    @Query("SELECT * FROM battle_logs WHERE duration BETWEEN :minDuration AND :maxDuration ORDER BY timestamp DESC")
     fun getBattleLogsByDurationRange(minDuration: Long, maxDuration: Long): Flow<List<BattleLog>>
     
     /**
@@ -214,7 +214,7 @@ interface BattleLogDao {
      * 
      * @return Number of victorious battles
      */
-    @Query("SELECT COUNT(*) FROM battle_logs WHERE isVictory = 1")
+    @Query("SELECT COUNT(*) FROM battle_logs WHERE result = 'Victory'")
     suspend fun getVictoryCount(): Int
     
     /**
@@ -222,7 +222,7 @@ interface BattleLogDao {
      * 
      * @return Number of defeated battles
      */
-    @Query("SELECT COUNT(*) FROM battle_logs WHERE isVictory = 0")
+    @Query("SELECT COUNT(*) FROM battle_logs WHERE result = 'Defeat'")
     suspend fun getDefeatCount(): Int
     
     /**
@@ -233,7 +233,7 @@ interface BattleLogDao {
     @Query("""
         SELECT CASE 
             WHEN COUNT(*) = 0 THEN 0.0 
-            ELSE (CAST(SUM(CASE WHEN isVictory = 1 THEN 1 ELSE 0 END) AS REAL) / COUNT(*)) * 100 
+            ELSE (CAST(SUM(CASE WHEN result = 'Victory' THEN 1 ELSE 0 END) AS REAL) / COUNT(*)) * 100 
         END 
         FROM battle_logs
     """)
@@ -244,7 +244,7 @@ interface BattleLogDao {
      * 
      * @return Average battle duration in seconds
      */
-    @Query("SELECT AVG(battleDuration) FROM battle_logs")
+    @Query("SELECT AVG(duration) FROM battle_logs")
     suspend fun getAverageBattleDuration(): Double?
     
     /**
@@ -252,7 +252,7 @@ interface BattleLogDao {
      * 
      * @return Total time spent in battles (seconds)
      */
-    @Query("SELECT SUM(battleDuration) FROM battle_logs")
+    @Query("SELECT SUM(duration) FROM battle_logs")
     suspend fun getTotalBattleTime(): Long?
     
     /**
@@ -282,7 +282,7 @@ interface BattleLogDao {
     @Query("""
         SELECT CASE 
             WHEN COUNT(*) = 0 THEN 0.0 
-            ELSE (CAST(SUM(CASE WHEN isVictory = 1 THEN 1 ELSE 0 END) AS REAL) / COUNT(*)) * 100 
+            ELSE (CAST(SUM(CASE WHEN result = 'Victory' THEN 1 ELSE 0 END) AS REAL) / COUNT(*)) * 100 
         END 
         FROM battle_logs WHERE questId = :questId
     """)
@@ -297,7 +297,7 @@ interface BattleLogDao {
     @Query("""
         SELECT CASE 
             WHEN COUNT(*) = 0 THEN 0.0 
-            ELSE (CAST(SUM(CASE WHEN isVictory = 1 THEN 1 ELSE 0 END) AS REAL) / COUNT(*)) * 100 
+            ELSE (CAST(SUM(CASE WHEN result = 'Victory' THEN 1 ELSE 0 END) AS REAL) / COUNT(*)) * 100 
         END 
         FROM battle_logs WHERE teamId = :teamId
     """)
@@ -309,7 +309,7 @@ interface BattleLogDao {
      * @param limit Number of battles to return
      * @return List of fastest battles
      */
-    @Query("SELECT * FROM battle_logs WHERE isVictory = 1 ORDER BY battleDuration ASC LIMIT :limit")
+    @Query("SELECT * FROM battle_logs WHERE result = 'Victory' ORDER BY duration ASC LIMIT :limit")
     suspend fun getFastestBattles(limit: Int = 10): List<BattleLog>
     
     /**
@@ -318,7 +318,7 @@ interface BattleLogDao {
      * @param limit Number of battles to return
      * @return List of slowest battles
      */
-    @Query("SELECT * FROM battle_logs ORDER BY battleDuration DESC LIMIT :limit")
+    @Query("SELECT * FROM battle_logs ORDER BY duration DESC LIMIT :limit")
     suspend fun getSlowestBattles(limit: Int = 10): List<BattleLog>
     
     /**
@@ -372,10 +372,10 @@ interface BattleLogDao {
     @Query("""
         SELECT 
             COUNT(*) as totalBattles,
-            SUM(CASE WHEN isVictory = 1 THEN 1 ELSE 0 END) as victories,
-            SUM(CASE WHEN isVictory = 0 THEN 1 ELSE 0 END) as defeats,
-            AVG(battleDuration) as avgDuration,
-            SUM(battleDuration) as totalDuration
+            SUM(CASE WHEN result = 'Victory' THEN 1 ELSE 0 END) as victories,
+            SUM(CASE WHEN result = 'Defeat' THEN 1 ELSE 0 END) as defeats,
+            AVG(duration) as avgDuration,
+            SUM(duration) as totalDuration
         FROM battle_logs 
         WHERE timestamp BETWEEN :dayStart AND :dayEnd
     """)
@@ -384,15 +384,15 @@ interface BattleLogDao {
     /**
      * Gets performance trends over time
      * 
-     * @param days Number of days to analyze
+     * @param cutoffTime Cutoff timestamp for analysis
      * @return List of daily performance data
      */
     @Query("""
         SELECT 
             DATE(timestamp/1000, 'unixepoch') as date,
             COUNT(*) as battleCount,
-            AVG(CASE WHEN isVictory = 1 THEN 1.0 ELSE 0.0 END) * 100 as winRate,
-            AVG(battleDuration) as avgDuration
+            AVG(CASE WHEN result = 'Victory' THEN 1.0 ELSE 0.0 END) * 100 as winRate,
+            AVG(duration) as avgDuration
         FROM battle_logs 
         WHERE timestamp >= :cutoffTime
         GROUP BY DATE(timestamp/1000, 'unixepoch')

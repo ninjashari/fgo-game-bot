@@ -22,123 +22,182 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.fgobot.R
 import com.fgobot.data.database.entities.Team
+import com.fgobot.data.repository.TeamRepositoryImpl
 import com.fgobot.presentation.components.*
-import com.fgobot.presentation.theme.FGOBotTheme
+import com.fgobot.presentation.viewmodel.TeamsViewModel
+import com.fgobot.presentation.viewmodel.TeamsAction
+import java.util.*
 
 /**
  * Teams screen composable
  * 
- * @param onNavigateBack Navigation callback to go back
+ * @param onNavigateBack Callback for back navigation
+ * @param onNavigateToHome Callback for home navigation
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeamsScreen(
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit,
+    onNavigateToHome: () -> Unit
 ) {
-    var showCreateTeamDialog by remember { mutableStateOf(false) }
-    var teams by remember { mutableStateOf(listOf<Team>()) }
+    val context = LocalContext.current
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Team Management",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+    // Create ViewModel with repository
+    val database = com.fgobot.data.database.FGOBotDatabase.getDatabase(context)
+    val teamDao = database.teamDao()
+    val logger = com.fgobot.core.logging.FGOLoggerImpl()
+    val repository = TeamRepositoryImpl(teamDao, logger)
+    
+    val viewModel: TeamsViewModel = viewModel { TeamsViewModel(repository) }
+    val uiState by viewModel.uiState.collectAsState()
+    
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.team_management)) },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToHome) {
+                        Icon(Icons.Default.Home, contentDescription = "Home")
+                    }
+                }
             )
-            
-            Row {
-                IconButton(onClick = { showCreateTeamDialog = true }) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Create Team"
-                    )
-                }
-                IconButton(onClick = onNavigateBack) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back"
-                    )
-                }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { viewModel.handleAction(TeamsAction.ShowCreateDialog) }
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Create Team")
             }
         }
-        
-        // Teams list or empty state
-        if (teams.isEmpty()) {
-            // Empty state
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+        ) {
+            // Error message
+            uiState.errorMessage?.let { error ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Group,
-                        contentDescription = "Teams",
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    
-                    Text(
-                        text = "No Teams Created",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    
-                    Text(
-                        text = "Create your first team to start automating FGO battles. Teams help organize your servants and strategies.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    
-                    FGOBotPrimaryButton(
-                        text = "Create New Team",
-                        onClick = { showCreateTeamDialog = true },
-                        fillMaxWidth = true
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = error,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { viewModel.handleAction(TeamsAction.ClearError) }) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Clear Error",
+                                tint = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
                 }
             }
-        } else {
+            
+            // Loading indicator
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            
             // Teams list
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(teams) { team ->
-                    TeamCard(
-                        team = team,
-                        onEdit = { /* TODO: Implement edit */ },
-                        onDelete = { 
-                            teams = teams.filter { it.id != team.id }
-                        }
-                    )
+            if (uiState.teams.isEmpty() && !uiState.isLoading) {
+                // Empty state
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            Icons.Default.Group,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "No teams created yet",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Create your first team to start automating battles",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        FGOBotPrimaryButton(
+                            text = "Create Team",
+                            onClick = { viewModel.handleAction(TeamsAction.ShowCreateDialog) }
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(uiState.teams) { team ->
+                        TeamCard(
+                            team = team,
+                            onEdit = { /* TODO: Implement edit */ },
+                            onDelete = { viewModel.handleAction(TeamsAction.DeleteTeam(team.id)) }
+                        )
+                    }
                 }
             }
         }
     }
     
     // Create team dialog
-    if (showCreateTeamDialog) {
+    if (uiState.showCreateDialog) {
         CreateTeamDialog(
-            onDismiss = { showCreateTeamDialog = false },
-            onTeamCreated = { newTeam ->
-                teams = teams + newTeam
-                showCreateTeamDialog = false
+            onDismiss = { viewModel.handleAction(TeamsAction.HideCreateDialog) },
+            onCreateTeam = { teamName ->
+                val newTeam = Team(
+                    id = 0, // Will be auto-generated by database
+                    name = teamName,
+                    description = "Created team",
+                    servantIds = emptyList(),
+                    craftEssenceIds = emptyList(),
+                    strategy = "Auto"
+                )
+                viewModel.handleAction(TeamsAction.CreateTeam(newTeam))
             }
         )
     }
@@ -147,6 +206,7 @@ fun TeamsScreen(
 /**
  * Team card component
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TeamCard(
     team: Team,
@@ -154,10 +214,13 @@ private fun TeamCard(
     onDelete: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onEdit
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -173,7 +236,7 @@ private fun TeamCard(
                     if (team.description.isNotEmpty()) {
                         Text(
                             text = team.description,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -181,14 +244,11 @@ private fun TeamCard(
                 
                 Row {
                     IconButton(onClick = onEdit) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit Team"
-                        )
+                        Icon(Icons.Default.Edit, contentDescription = "Edit Team")
                     }
                     IconButton(onClick = onDelete) {
                         Icon(
-                            imageVector = Icons.Default.Delete,
+                            Icons.Default.Delete,
                             contentDescription = "Delete Team",
                             tint = MaterialTheme.colorScheme.error
                         )
@@ -198,22 +258,25 @@ private fun TeamCard(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Team stats
+            // Team info
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
+                    text = "Servants: ${team.servantIds.size}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
                     text = "Strategy: ${team.strategy}",
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "Win Rate: ${String.format("%.1f", team.winRate)}%",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(
-                    text = "Used: ${team.usageCount} times",
-                    style = MaterialTheme.typography.bodySmall
+                    text = if (team.isDefault) "Default" else "Custom",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (team.isDefault) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -227,158 +290,57 @@ private fun TeamCard(
 @Composable
 private fun CreateTeamDialog(
     onDismiss: () -> Unit,
-    onTeamCreated: (Team) -> Unit
+    onCreateTeam: (String) -> Unit
 ) {
     var teamName by remember { mutableStateOf("") }
-    var teamDescription by remember { mutableStateOf("") }
-    var selectedStrategy by remember { mutableStateOf("Auto") }
-    var supportClass by remember { mutableStateOf("Any") }
+    var isError by remember { mutableStateOf(false) }
     
-    val strategies = listOf("Auto", "Farming", "Challenge", "Custom")
-    val servantClasses = listOf("Any", "Saber", "Archer", "Lancer", "Rider", "Caster", "Assassin", "Berserker")
-    
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Create New Team") },
+        text = {
+            Column {
                 Text(
-                    text = "Create New Team",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    text = "Enter a name for your new team:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
-                
-                // Team name
                 OutlinedTextField(
                     value = teamName,
-                    onValueChange = { teamName = it },
+                    onValueChange = { 
+                        teamName = it
+                        isError = it.isBlank()
+                    },
                     label = { Text("Team Name") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    isError = isError,
+                    supportingText = if (isError) {
+                        { Text("Team name cannot be empty") }
+                    } else null,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
-                
-                // Team description
-                OutlinedTextField(
-                    value = teamDescription,
-                    onValueChange = { teamDescription = it },
-                    label = { Text("Description (Optional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    maxLines = 3
-                )
-                
-                // Strategy selection
-                var strategyExpanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = strategyExpanded,
-                    onExpandedChange = { strategyExpanded = !strategyExpanded }
-                ) {
-                    OutlinedTextField(
-                        value = selectedStrategy,
-                        onValueChange = { },
-                        readOnly = true,
-                        label = { Text("Strategy") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = strategyExpanded) },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = strategyExpanded,
-                        onDismissRequest = { strategyExpanded = false }
-                    ) {
-                        strategies.forEach { strategy ->
-                            DropdownMenuItem(
-                                text = { Text(strategy) },
-                                onClick = {
-                                    selectedStrategy = strategy
-                                    strategyExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-                
-                // Support class selection
-                var supportExpanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = supportExpanded,
-                    onExpandedChange = { supportExpanded = !supportExpanded }
-                ) {
-                    OutlinedTextField(
-                        value = supportClass,
-                        onValueChange = { },
-                        readOnly = true,
-                        label = { Text("Preferred Support Class") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = supportExpanded) },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = supportExpanded,
-                        onDismissRequest = { supportExpanded = false }
-                    ) {
-                        servantClasses.forEach { servantClass ->
-                            DropdownMenuItem(
-                                text = { Text(servantClass) },
-                                onClick = {
-                                    supportClass = servantClass
-                                    supportExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-                
-                // Buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Cancel")
-                    }
-                    
-                    Button(
-                        onClick = {
-                            if (teamName.isNotBlank()) {
-                                val newTeam = Team(
-                                    id = System.currentTimeMillis(), // Simple ID generation
-                                    name = teamName.trim(),
-                                    description = teamDescription.trim(),
-                                    servantIds = emptyList(), // Will be configured later
-                                    craftEssenceIds = emptyList(), // Will be configured later
-                                    supportServantClass = supportClass,
-                                    strategy = selectedStrategy,
-                                    createdAt = System.currentTimeMillis(),
-                                    lastUpdated = System.currentTimeMillis()
-                                )
-                                onTeamCreated(newTeam)
-                            }
-                        },
-                        enabled = teamName.isNotBlank(),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Create")
-                    }
-                }
             }
+        },
+        confirmButton = {
+            FGOBotPrimaryButton(
+                text = "Create",
+                onClick = {
+                    if (teamName.isNotBlank()) {
+                        onCreateTeam(teamName.trim())
+                    } else {
+                        isError = true
+                    }
+                },
+                enabled = teamName.isNotBlank()
+            )
+        },
+        dismissButton = {
+            FGOBotSecondaryButton(
+                text = "Cancel",
+                onClick = onDismiss
+            )
         }
-    }
+    )
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun TeamsScreenPreview() {
-    FGOBotTheme {
-        TeamsScreen()
-    }
-} 
+ 

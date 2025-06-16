@@ -1,8 +1,8 @@
 /*
  * FGO Bot - Quest Data Access Object
  * 
- * This file defines the DAO interface for Quest entity operations.
- * Provides methods for CRUD operations, queries, and quest management.
+ * This file defines the DAO (Data Access Object) for Quest entities.
+ * Provides database operations for managing Fate/Grand Order quest data.
  */
 
 package com.fgobot.data.database.dao
@@ -12,24 +12,24 @@ import kotlinx.coroutines.flow.Flow
 import com.fgobot.data.database.entities.Quest
 
 /**
- * Data Access Object for Quest entity
+ * Data Access Object for Quest entities
  * 
- * Provides methods for quest database operations including:
+ * Provides comprehensive database operations for managing quest data including:
  * - Basic CRUD operations
- * - Quest queries and filtering
- * - Type and difficulty-based searches
- * - Completion tracking and analytics
+ * - Advanced querying and filtering
+ * - Statistics and analytics
+ * - User progress tracking
  */
 @Dao
 interface QuestDao {
     
-    // ==================== INSERT OPERATIONS ====================
+    // ==================== BASIC CRUD OPERATIONS ====================
     
     /**
      * Inserts a new quest into the database
      * 
      * @param quest Quest to insert
-     * @return ID of the inserted quest
+     * @return Row ID of the inserted quest
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertQuest(quest: Quest): Long
@@ -38,15 +38,13 @@ interface QuestDao {
      * Inserts multiple quests into the database
      * 
      * @param quests List of quests to insert
-     * @return List of inserted quest IDs
+     * @return List of row IDs of the inserted quests
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertQuests(quests: List<Quest>): List<Long>
     
-    // ==================== UPDATE OPERATIONS ====================
-    
     /**
-     * Updates an existing quest
+     * Updates an existing quest in the database
      * 
      * @param quest Quest to update
      * @return Number of rows affected
@@ -55,15 +53,13 @@ interface QuestDao {
     suspend fun updateQuest(quest: Quest): Int
     
     /**
-     * Updates multiple quests
+     * Updates multiple quests in the database
      * 
      * @param quests List of quests to update
      * @return Number of rows affected
      */
     @Update
     suspend fun updateQuests(quests: List<Quest>): Int
-    
-    // ==================== DELETE OPERATIONS ====================
     
     /**
      * Deletes a quest from the database
@@ -75,16 +71,25 @@ interface QuestDao {
     suspend fun deleteQuest(quest: Quest): Int
     
     /**
+     * Deletes multiple quests from the database
+     * 
+     * @param quests List of quests to delete
+     * @return Number of rows affected
+     */
+    @Delete
+    suspend fun deleteQuests(quests: List<Quest>): Int
+    
+    /**
      * Deletes a quest by ID
      * 
-     * @param questId ID of quest to delete
+     * @param questId ID of the quest to delete
      * @return Number of rows affected
      */
     @Query("DELETE FROM quests WHERE id = :questId")
     suspend fun deleteQuestById(questId: Int): Int
     
     /**
-     * Deletes all quests
+     * Deletes all quests from the database
      * 
      * @return Number of rows affected
      */
@@ -97,7 +102,7 @@ interface QuestDao {
      * Gets a quest by ID
      * 
      * @param questId Quest ID
-     * @return Quest or null if not found
+     * @return Quest with the specified ID, or null if not found
      */
     @Query("SELECT * FROM quests WHERE id = :questId")
     suspend fun getQuestById(questId: Int): Quest?
@@ -106,17 +111,26 @@ interface QuestDao {
      * Gets a quest by ID as Flow
      * 
      * @param questId Quest ID
-     * @return Flow of Quest or null
+     * @return Flow of quest with the specified ID
      */
     @Query("SELECT * FROM quests WHERE id = :questId")
     fun getQuestByIdFlow(questId: Int): Flow<Quest?>
+    
+    /**
+     * Gets a quest by name
+     * 
+     * @param name Quest name
+     * @return Quest with the specified name, or null if not found
+     */
+    @Query("SELECT * FROM quests WHERE name = :name LIMIT 1")
+    suspend fun getQuestByName(name: String): Quest?
     
     /**
      * Gets all quests
      * 
      * @return List of all quests
      */
-    @Query("SELECT * FROM quests ORDER BY chapter ASC, questOrder ASC")
+    @Query("SELECT * FROM quests ORDER BY chapter ASC, id ASC")
     suspend fun getAllQuests(): List<Quest>
     
     /**
@@ -124,7 +138,7 @@ interface QuestDao {
      * 
      * @return Flow of all quests
      */
-    @Query("SELECT * FROM quests ORDER BY chapter ASC, questOrder ASC")
+    @Query("SELECT * FROM quests ORDER BY chapter ASC, id ASC")
     fun getAllQuestsFlow(): Flow<List<Quest>>
     
     /**
@@ -133,7 +147,7 @@ interface QuestDao {
      * @param questType Quest type (Main, Free, Event, etc.)
      * @return Flow of quests of the specified type
      */
-    @Query("SELECT * FROM quests WHERE questType = :questType ORDER BY chapter ASC, questOrder ASC")
+    @Query("SELECT * FROM quests WHERE type = :questType ORDER BY chapter ASC, id ASC")
     fun getQuestsByType(questType: String): Flow<List<Quest>>
     
     /**
@@ -142,23 +156,23 @@ interface QuestDao {
      * @param chapter Chapter number
      * @return Flow of quests in the specified chapter
      */
-    @Query("SELECT * FROM quests WHERE chapter = :chapter ORDER BY questOrder ASC")
+    @Query("SELECT * FROM quests WHERE chapter = :chapter ORDER BY id ASC")
     fun getQuestsByChapter(chapter: String): Flow<List<Quest>>
     
     /**
-     * Gets available quests (unlocked and not completed)
+     * Gets available quests (unlocked and not fully completed for non-repeatable)
      * 
      * @return Flow of available quests
      */
-    @Query("SELECT * FROM quests WHERE isUnlocked = 1 AND isCompleted = 0 ORDER BY chapter ASC, questOrder ASC")
+    @Query("SELECT * FROM quests WHERE isUnlocked = 1 AND (isRepeatable = 1 OR completionCount = 0) ORDER BY chapter ASC, id ASC")
     fun getAvailableQuests(): Flow<List<Quest>>
     
     /**
-     * Gets completed quests
+     * Gets completed quests (non-repeatable quests that have been completed)
      * 
      * @return Flow of completed quests
      */
-    @Query("SELECT * FROM quests WHERE isCompleted = 1 ORDER BY chapter ASC, questOrder ASC")
+    @Query("SELECT * FROM quests WHERE completionCount > 0 ORDER BY chapter ASC, id ASC")
     fun getCompletedQuests(): Flow<List<Quest>>
     
     /**
@@ -167,7 +181,7 @@ interface QuestDao {
      * @param searchQuery Search query (partial name match)
      * @return Flow of quests matching the search query
      */
-    @Query("SELECT * FROM quests WHERE name LIKE '%' || :searchQuery || '%' ORDER BY chapter ASC, questOrder ASC")
+    @Query("SELECT * FROM quests WHERE name LIKE '%' || :searchQuery || '%' ORDER BY chapter ASC, id ASC")
     fun searchQuestsByName(searchQuery: String): Flow<List<Quest>>
     
     /**
@@ -196,7 +210,7 @@ interface QuestDao {
      * @param dropItem Item to search for in drops
      * @return Flow of quests that drop the specified item
      */
-    @Query("SELECT * FROM quests WHERE drops LIKE '%' || :dropItem || '%' ORDER BY chapter ASC, questOrder ASC")
+    @Query("SELECT * FROM quests WHERE drops LIKE '%' || :dropItem || '%' ORDER BY chapter ASC, id ASC")
     fun getQuestsWithDrop(dropItem: String): Flow<List<Quest>>
     
     /**
@@ -220,9 +234,9 @@ interface QuestDao {
     /**
      * Gets completed quest count
      * 
-     * @return Number of completed quests
+     * @return Number of quests that have been completed at least once
      */
-    @Query("SELECT COUNT(*) FROM quests WHERE isCompleted = 1")
+    @Query("SELECT COUNT(*) FROM quests WHERE completionCount > 0")
     suspend fun getCompletedQuestCount(): Int
     
     /**
@@ -231,7 +245,7 @@ interface QuestDao {
      * @param questType Quest type
      * @return Number of quests of the specified type
      */
-    @Query("SELECT COUNT(*) FROM quests WHERE questType = :questType")
+    @Query("SELECT COUNT(*) FROM quests WHERE type = :questType")
     suspend fun getQuestCountByType(questType: String): Int
     
     /**
@@ -248,7 +262,7 @@ interface QuestDao {
      * 
      * @return Average difficulty of completed quests
      */
-    @Query("SELECT AVG(difficulty) FROM quests WHERE isCompleted = 1")
+    @Query("SELECT AVG(difficulty) FROM quests WHERE completionCount > 0")
     suspend fun getAverageCompletedDifficulty(): Double?
     
     /**
@@ -256,7 +270,7 @@ interface QuestDao {
      * 
      * @return Total AP spent
      */
-    @Query("SELECT SUM(apCost * completionCount) FROM quests WHERE isCompleted = 1")
+    @Query("SELECT SUM(apCost * completionCount) FROM quests WHERE completionCount > 0")
     suspend fun getTotalApSpent(): Int?
     
     /**
@@ -285,24 +299,21 @@ interface QuestDao {
     // ==================== UTILITY OPERATIONS ====================
     
     /**
-     * Updates quest completion status
+     * Updates quest completion status by incrementing completion count
      * 
      * @param questId Quest ID
-     * @param isCompleted Completion status
      * @param timestamp Update timestamp
      * @return Number of rows affected
      */
     @Query("""
         UPDATE quests 
-        SET isCompleted = :isCompleted,
-            completionCount = completionCount + CASE WHEN :isCompleted THEN 1 ELSE 0 END,
-            lastCompleted = CASE WHEN :isCompleted THEN :timestamp ELSE lastCompleted END,
+        SET completionCount = completionCount + 1,
+            lastCompleted = :timestamp,
             lastUpdated = :timestamp
         WHERE id = :questId
     """)
     suspend fun updateQuestCompletion(
         questId: Int, 
-        isCompleted: Boolean,
         timestamp: Long = System.currentTimeMillis()
     ): Int
     
@@ -389,22 +400,24 @@ interface QuestDao {
      * 
      * @param questType Quest type filter (null for all)
      * @param chapter Chapter filter (null for all)
-     * @param isCompleted Completion status filter (null for all)
+     * @param hasCompletions Completion status filter (null for all, true for completed, false for not completed)
      * @param isUnlocked Unlock status filter (null for all)
      * @return Flow of quests matching the criteria
      */
     @Query("""
         SELECT * FROM quests 
-        WHERE (:questType IS NULL OR questType = :questType)
+        WHERE (:questType IS NULL OR type = :questType)
           AND (:chapter IS NULL OR chapter = :chapter)
-          AND (:isCompleted IS NULL OR isCompleted = :isCompleted)
+          AND (:hasCompletions IS NULL OR 
+               (:hasCompletions = 1 AND completionCount > 0) OR 
+               (:hasCompletions = 0 AND completionCount = 0))
           AND (:isUnlocked IS NULL OR isUnlocked = :isUnlocked)
-        ORDER BY chapter ASC, questOrder ASC
+        ORDER BY chapter ASC, id ASC
     """)
     fun getQuestsByCriteria(
         questType: String? = null,
         chapter: String? = null,
-        isCompleted: Boolean? = null,
+        hasCompletions: Boolean? = null,
         isUnlocked: Boolean? = null
     ): Flow<List<Quest>>
 } 

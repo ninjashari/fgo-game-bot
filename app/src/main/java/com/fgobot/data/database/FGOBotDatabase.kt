@@ -14,6 +14,9 @@ import androidx.room.TypeConverters
 import android.content.Context
 import com.fgobot.data.database.converters.IntListConverter
 import com.fgobot.data.database.converters.StringListConverter
+import com.fgobot.data.database.dao.BattleLogDao
+import com.fgobot.data.database.dao.CraftEssenceDao
+import com.fgobot.data.database.dao.QuestDao
 import com.fgobot.data.database.dao.ServantDao
 import com.fgobot.data.database.dao.TeamDao
 import com.fgobot.data.database.entities.BattleLog
@@ -58,6 +61,27 @@ abstract class FGOBotDatabase : RoomDatabase() {
      * @return TeamDao instance
      */
     abstract fun teamDao(): TeamDao
+    
+    /**
+     * Provides access to BattleLog DAO
+     * 
+     * @return BattleLogDao instance
+     */
+    abstract fun battleLogDao(): BattleLogDao
+    
+    /**
+     * Provides access to Quest DAO
+     * 
+     * @return QuestDao instance
+     */
+    abstract fun questDao(): QuestDao
+    
+    /**
+     * Provides access to CraftEssence DAO
+     * 
+     * @return CraftEssenceDao instance
+     */
+    abstract fun craftEssenceDao(): CraftEssenceDao
     
     companion object {
         

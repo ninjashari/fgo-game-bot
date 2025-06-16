@@ -33,38 +33,40 @@ import com.fgobot.presentation.theme.FGOBotTheme
  * Settings screen composable
  * 
  * @param onNavigateBack Navigation callback to go back
+ * @param onNavigateToHome Navigation callback to go to home
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Settings",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+    
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Settings") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToHome) {
+                        Icon(Icons.Default.Home, contentDescription = "Home")
+                    }
+                }
             )
-            
-            IconButton(onClick = onNavigateBack) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Back"
-                )
-            }
         }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
         
         // Placeholder content
         Card(
@@ -109,6 +111,7 @@ fun SettingsScreen(
                     fillMaxWidth = true
                 )
             }
+        }
         }
     }
 }
