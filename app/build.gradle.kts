@@ -15,6 +15,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     kotlin("kapt")
+    id("kotlin-parcelize")
 }
 
 android {
@@ -38,6 +39,22 @@ android {
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
         }
+
+        // NDK configuration for future native extensions
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
+        
+        // External native build configuration (optional for future extensions)
+        externalNativeBuild {
+            cmake {
+                cppFlags += "-std=c++17"
+                arguments += listOf(
+                    "-DANDROID_STL=c++_shared",
+                    "-DANDROID_PLATFORM=android-26"
+                )
+            }
+        }
     }
 
     buildTypes {
@@ -52,6 +69,10 @@ android {
             isDebuggable = true
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            // Preserve native debug symbols for debugging
+            packagingOptions {
+                doNotStrip("**/**.so")
+            }
         }
     }
 
@@ -70,6 +91,8 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        // Enable AIDL for future compatibility
+        aidl = true
     }
 
     composeOptions {
@@ -80,12 +103,24 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+        // Ensure native libraries are included
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
     
     lint {
         baseline = file("lint-baseline.xml")
         abortOnError = false
         warningsAsErrors = false
+    }
+
+    // External native build configuration
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 }
 
@@ -165,4 +200,18 @@ dependencies {
     // Debug dependencies
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    // OpenCV 4.9.0 from Maven Central - Phase 4 Integration
+    implementation("org.opencv:opencv:4.9.0")
+    
+    // TensorFlow Lite for machine learning models - Phase 4 AI Features
+    implementation("org.tensorflow:tensorflow-lite:2.13.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.13.0")
+    
+    // ML Kit for text recognition - Phase 4 OCR
+    implementation("com.google.mlkit:text-recognition:16.0.0")
+    
+    // Performance monitoring
+    implementation("androidx.benchmark:benchmark-common:1.2.2")
 } 

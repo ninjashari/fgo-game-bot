@@ -68,6 +68,7 @@ object FGOBotLogger {
         NETWORK("NET"),
         UI("UI"),
         AUTOMATION("AUTO"),
+        VISION("VISION"),
         PERFORMANCE("PERF"),
         ERROR("ERR"),
         GENERAL("GEN")

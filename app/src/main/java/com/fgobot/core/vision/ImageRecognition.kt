@@ -4,7 +4,7 @@
  * This file implements the core image recognition functionality using OpenCV.
  * Provides template matching, UI element detection, and battle state recognition.
  * 
- * Note: Currently using placeholder implementations. OpenCV integration will be completed in Phase 4.
+ * Phase 4 Update: Integrated with OpenCV-based TemplateMatchingEngine for real functionality.
  */
 
 package com.fgobot.core.vision
@@ -13,15 +13,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Rect
 import com.fgobot.core.logging.FGOBotLogger
-import com.fgobot.core.logging.LogTags
-// OpenCV imports - will be enabled in Phase 4
-// import org.opencv.android.OpenCVLoaderCallback
-// import org.opencv.android.BaseLoaderCallback
-// import org.opencv.core.*
-// import org.opencv.imgproc.Imgproc
-// import org.opencv.android.Utils
-import java.io.IOException
-import java.io.InputStream
+import kotlinx.coroutines.runBlocking
 import kotlin.math.max
 import kotlin.math.min
 
@@ -33,7 +25,8 @@ data class MatchResult(
     val confidence: Double,
     val location: android.graphics.Point,
     val boundingRect: Rect,
-    val templateName: String
+    val templateName: String,
+    val processingTime: Long = 0
 )
 
 /**
@@ -62,22 +55,12 @@ enum class BattleState {
 }
 
 /**
- * Placeholder Mat class for OpenCV compatibility
- * Will be replaced with actual OpenCV Mat in Phase 4
- */
-private class Mat {
-    fun release() {}
-    fun cols(): Int = 100
-    fun rows(): Int = 100
-}
-
-/**
  * Image recognition system using OpenCV
  * 
  * Provides comprehensive image analysis capabilities for FGO automation.
  * Optimized for performance with template caching and region-based searching.
  * 
- * Note: Currently using placeholder implementations. Full OpenCV integration in Phase 4.
+ * Phase 4 Update: Now uses actual OpenCV template matching engine.
  */
 class ImageRecognition(
     private val context: Context,
@@ -125,8 +108,12 @@ class ImageRecognition(
         )
     }
     
-    private var isOpenCVInitialized = false
-    private val templateCache = mutableMapOf<String, Mat>()
+    // OpenCV components
+    private lateinit var openCVManager: OpenCVManager
+    private lateinit var templateMatchingEngine: TemplateMatchingEngine
+    private lateinit var templateAssetManager: TemplateAssetManager
+    
+    private var isInitialized = false
     private val recognitionStats = mutableMapOf<String, RecognitionStats>()
     
     /**
@@ -134,18 +121,32 @@ class ImageRecognition(
      * 
      * @return True if initialization successful
      */
-    fun initialize(): Boolean {
+    suspend fun initialize(): Boolean {
         return try {
-            logger.info(FGOBotLogger.Category.AUTOMATION, "Initializing image recognition system (placeholder mode)")
+            logger.info(FGOBotLogger.Category.VISION, "Initializing image recognition system with OpenCV")
             
-            // Placeholder initialization - will be replaced with OpenCV in Phase 4
-            isOpenCVInitialized = true
-            loadTemplates()
+            // Initialize OpenCV manager
+            openCVManager = OpenCVManager.getInstance(context, logger)
+            if (!openCVManager.initialize()) {
+                logger.error(FGOBotLogger.Category.VISION, "Failed to initialize OpenCV")
+                return false
+            }
             
-            logger.info(FGOBotLogger.Category.AUTOMATION, "Image recognition system initialized (placeholder mode)")
+            // Initialize template matching engine
+            templateMatchingEngine = TemplateMatchingEngine(openCVManager, logger)
+            
+            // Initialize template asset manager
+            templateAssetManager = TemplateAssetManager(context, logger)
+            templateAssetManager.initialize()
+            
+            isInitialized = true
+            
+            logger.info(FGOBotLogger.Category.VISION, "Image recognition system initialized successfully")
+            logger.info(FGOBotLogger.Category.VISION, "OpenCV Version: ${openCVManager.getVersion()}")
+            
             true
         } catch (e: Exception) {
-            logger.error(FGOBotLogger.Category.ERROR, "Failed to initialize image recognition", e)
+            logger.error(FGOBotLogger.Category.VISION, "Failed to initialize image recognition", e)
             false
         }
     }
@@ -156,24 +157,54 @@ class ImageRecognition(
      * @param screenshot Current screen bitmap
      * @return Detected battle state
      */
-    fun detectBattleState(screenshot: Bitmap): BattleState {
-        if (!isOpenCVInitialized) {
+    suspend fun detectBattleState(screenshot: Bitmap): BattleState {
+        if (!isInitialized) {
             return BattleState.UNKNOWN
         }
         
         return try {
             val startTime = System.currentTimeMillis()
             
-            // Placeholder implementation - will be enhanced with actual OpenCV detection in Phase 4
-            val state = BattleState.COMMAND_SELECTION // Default state for testing
+            // Check for different battle states using template matching
+            val stateTemplates = mapOf(
+                BattleState.QUEST_SELECTION to "quest_selection_screen",
+                BattleState.SUPPORT_SELECTION to "support_selection_screen",
+                BattleState.BATTLE_START to "battle_start_screen",
+                BattleState.COMMAND_SELECTION to "command_selection_screen",
+                BattleState.SKILL_SELECTION to "skill_selection_screen",
+                BattleState.NP_SELECTION to "np_selection_screen",
+                BattleState.BATTLE_RESULT to "battle_result_screen",
+                BattleState.AP_RECOVERY to "ap_recovery_screen"
+            )
+            
+            var detectedState = BattleState.UNKNOWN
+            var highestConfidence = 0.0
+            
+            for ((state, templateName) in stateTemplates) {
+                val template = templateAssetManager.getTemplate(templateName)
+                if (template != null) {
+                    val result = templateMatchingEngine.matchTemplate(
+                        screenshot,
+                        template,
+                        confidence = 0.7 // Lower threshold for state detection
+                    )
+                    
+                    if (result.found && result.confidence > highestConfidence) {
+                        detectedState = state
+                        highestConfidence = result.confidence
+                    }
+                }
+            }
             
             val processingTime = System.currentTimeMillis() - startTime
-            logger.debug(FGOBotLogger.Category.AUTOMATION, 
-                "Battle state detection completed in ${processingTime}ms: $state (placeholder)")
+            logger.debug(
+                FGOBotLogger.Category.VISION,
+                "Battle state detection completed in ${processingTime}ms: $detectedState (confidence: ${"%.3f".format(highestConfidence)})"
+            )
             
-            state
+            detectedState
         } catch (e: Exception) {
-            logger.error(FGOBotLogger.Category.ERROR, "Error detecting battle state", e)
+            logger.error(FGOBotLogger.Category.VISION, "Error detecting battle state", e)
             BattleState.ERROR_STATE
         }
     }
@@ -187,37 +218,61 @@ class ImageRecognition(
      * @param confidenceThreshold Minimum confidence for match
      * @return Match result
      */
-    fun findTemplate(
+    suspend fun findTemplate(
         screenshot: Bitmap,
         templateName: String,
         region: RecognitionRegion? = null,
         confidenceThreshold: Double = DEFAULT_CONFIDENCE_THRESHOLD
     ): MatchResult {
-        if (!isOpenCVInitialized) {
+        if (!isInitialized) {
             return MatchResult(false, 0.0, android.graphics.Point(), Rect(), templateName)
         }
         
         return try {
             val startTime = System.currentTimeMillis()
             
-            // Placeholder implementation - will be replaced with actual OpenCV template matching in Phase 4
-            val found = templateCache.containsKey(templateName) && Math.random() > 0.5 // Random for testing
-            val confidence = if (found) 0.85 else 0.3
-            val location = android.graphics.Point(100, 100) // Placeholder location
-            val boundingRect = Rect(100, 100, 200, 150)
+            // Get template from asset manager
+            val template = templateAssetManager.getTemplate(templateName)
+            if (template == null) {
+                logger.warn(FGOBotLogger.Category.VISION, "Template not found: $templateName")
+                return MatchResult(false, 0.0, android.graphics.Point(), Rect(), templateName)
+            }
+            
+            // Convert region to Rect for OpenCV
+            val roi = region?.rect
+            
+            // Perform template matching
+            val result = templateMatchingEngine.matchTemplate(
+                screenshot,
+                template,
+                confidenceThreshold,
+                roi = roi
+            )
             
             val processingTime = System.currentTimeMillis() - startTime
             
+            // Convert result to our format
+            val matchResult = MatchResult(
+                found = result.found,
+                confidence = result.confidence,
+                location = android.graphics.Point(result.location.left, result.location.top),
+                boundingRect = result.location,
+                templateName = templateName,
+                processingTime = processingTime
+            )
+            
             // Update statistics
-            updateRecognitionStats(templateName, found, confidence, processingTime)
+            updateRecognitionStats(templateName, result.found, result.confidence, processingTime)
             
-            logger.debug(FGOBotLogger.Category.AUTOMATION, 
-                "Template matching '$templateName': found=$found, confidence=${"%.3f".format(confidence)}, time=${processingTime}ms (placeholder)")
+            logger.debug(
+                FGOBotLogger.Category.VISION,
+                "Template matching '$templateName': found=${result.found}, confidence=${"%.3f".format(result.confidence)}, time=${processingTime}ms"
+            )
             
-            MatchResult(found, confidence, location, boundingRect, templateName)
+            matchResult
             
         } catch (e: Exception) {
-            logger.error(FGOBotLogger.Category.ERROR, "Error in template matching for $templateName", e)
+            logger.error(FGOBotLogger.Category.VISION, "Error in template matching for $templateName", e)
             MatchResult(false, 0.0, android.graphics.Point(), Rect(), templateName)
         }
     }
@@ -232,37 +287,97 @@ class ImageRecognition(
      * @param maxMatches Maximum number of matches to return
      * @return List of match results
      */
-    fun findMultipleTemplates(
+    suspend fun findMultipleTemplates(
         screenshot: Bitmap,
         templateName: String,
         region: RecognitionRegion? = null,
         confidenceThreshold: Double = DEFAULT_CONFIDENCE_THRESHOLD,
         maxMatches: Int = 10
     ): List<MatchResult> {
-        if (!isOpenCVInitialized) {
+        if (!isInitialized) {
             return emptyList()
         }
         
         return try {
-            // Placeholder implementation - will be replaced with actual OpenCV multiple template matching in Phase 4
-            val matches = mutableListOf<MatchResult>()
-            
-            // Generate some placeholder matches for testing
-            repeat(minOf(3, maxMatches)) { i ->
-                matches.add(MatchResult(
-                    found = true,
-                    confidence = 0.8 + (i * 0.05),
-                    location = android.graphics.Point(100 + i * 50, 100 + i * 30),
-                    boundingRect = Rect(100 + i * 50, 100 + i * 30, 150 + i * 50, 130 + i * 30),
-                    templateName = templateName
-                ))
+            val template = templateAssetManager.getTemplate(templateName)
+            if (template == null) {
+                logger.warn(FGOBotLogger.Category.VISION, "Template not found: $templateName")
+                return emptyList()
             }
             
-            matches.sortedByDescending { it.confidence }
+            // Use the template matching engine to find all matches
+            val results = templateMatchingEngine.findAllMatches(
+                screenshot,
+                template,
+                confidenceThreshold,
+                maxMatches = maxMatches
+            )
+            
+            // Convert results to our format
+            results.map { result ->
+                MatchResult(
+                    found = result.found,
+                    confidence = result.confidence,
+                    location = android.graphics.Point(result.location.left, result.location.top),
+                    boundingRect = result.location,
+                    templateName = templateName,
+                    processingTime = result.processingTime
+                )
+            }
             
         } catch (e: Exception) {
-            logger.error(FGOBotLogger.Category.ERROR, "Error in multiple template matching for $templateName", e)
+            logger.error(FGOBotLogger.Category.VISION, "Error in multiple template matching for $templateName", e)
             emptyList()
+        }
+    }
+    
+    /**
+     * Performs multi-scale template matching for better accuracy
+     * 
+     * @param screenshot Screenshot to search in
+     * @param templateName Name of template to find
+     * @param confidenceThreshold Minimum confidence for match
+     * @return Best match result across all scales
+     */
+    suspend fun findTemplateMultiScale(
+        screenshot: Bitmap,
+        templateName: String,
+        confidenceThreshold: Double = DEFAULT_CONFIDENCE_THRESHOLD
+    ): MatchResult {
+        if (!isInitialized) {
+            return MatchResult(false, 0.0, android.graphics.Point(), Rect(), templateName)
+        }
+        
+        return try {
+            val template = templateAssetManager.getTemplate(templateName)
+            if (template == null) {
+                logger.warn(FGOBotLogger.Category.VISION, "Template not found: $templateName")
+                return MatchResult(false, 0.0, android.graphics.Point(), Rect(), templateName)
+            }
+            
+            val result = templateMatchingEngine.matchTemplateMultiScale(
+                screenshot,
+                template,
+                confidenceThreshold
+            )
+            
+            val bestMatch = result.bestMatch
+            if (bestMatch != null) {
+                MatchResult(
+                    found = bestMatch.found,
+                    confidence = bestMatch.confidence,
+                    location = android.graphics.Point(bestMatch.location.left, bestMatch.location.top),
+                    boundingRect = bestMatch.location,
+                    templateName = templateName,
+                    processingTime = result.totalProcessingTime
+                )
+            } else {
+                MatchResult(false, 0.0, android.graphics.Point(), Rect(), templateName)
+            }
+            
+        } catch (e: Exception) {
+            logger.error(FGOBotLogger.Category.VISION, "Error in multi-scale template matching for $templateName", e)
+            MatchResult(false, 0.0, android.graphics.Point(), Rect(), templateName)
         }
     }
     
@@ -276,33 +391,25 @@ class ImageRecognition(
     }
     
     /**
-     * Loads template images from assets
-     * 
-     * Note: Placeholder implementation - will load actual templates in Phase 4
+     * Gets performance statistics from all components
      */
-    private fun loadTemplates() {
-        logger.info(FGOBotLogger.Category.AUTOMATION, "Loading template images (placeholder mode)")
+    fun getPerformanceStats(): Map<String, Any> {
+        val stats = mutableMapOf<String, Any>()
         
-        val templateNames = listOf(
-            "attack_button",
-            "support_selection",
-            "quest_selection",
-            "battle_result",
-            "ap_recovery",
-            "skill_menu",
-            "card_arts",
-            "card_buster",
-            "card_quick",
-            "card_np"
-        )
-        
-        templateNames.forEach { templateName ->
-            // Placeholder template loading - will be replaced with actual asset loading in Phase 4
-            templateCache[templateName] = Mat()
-            logger.debug(FGOBotLogger.Category.AUTOMATION, "Loaded template: $templateName (placeholder)")
+        if (isInitialized) {
+            stats["openCV"] = openCVManager.getInitializationMetrics()
+            stats["templateMatching"] = templateMatchingEngine.getPerformanceStats()
+            stats["templateAssets"] = templateAssetManager.getStats()
+            stats["recognition"] = recognitionStats.mapValues { (_, stats) ->
+                mapOf(
+                    "successRate" to stats.successRate,
+                    "averageProcessingTime" to stats.averageProcessingTime,
+                    "totalAttempts" to stats.totalAttempts
+                )
+            }
         }
         
-        logger.info(FGOBotLogger.Category.AUTOMATION, "Loaded ${templateCache.size} templates (placeholder mode)")
+        return stats
     }
     
     /**
@@ -328,14 +435,28 @@ class ImageRecognition(
      * Cleanup resources
      */
     fun cleanup() {
-        logger.info(FGOBotLogger.Category.AUTOMATION, "Cleaning up image recognition resources")
+        logger.info(FGOBotLogger.Category.VISION, "Cleaning up image recognition resources")
         
-        templateCache.values.forEach { it.release() }
-        templateCache.clear()
+        if (isInitialized) {
+            templateAssetManager.cleanup()
+            openCVManager.cleanup()
+        }
         
-        isOpenCVInitialized = false
+        recognitionStats.clear()
+        isInitialized = false
         
-        logger.info(FGOBotLogger.Category.AUTOMATION, "Image recognition cleanup completed")
+        logger.info(FGOBotLogger.Category.VISION, "Image recognition cleanup completed")
+    }
+    
+    /**
+     * Performs a health check on all components
+     */
+    suspend fun healthCheck(): Boolean {
+        return if (isInitialized) {
+            openCVManager.healthCheck() && templateAssetManager.isReady()
+        } else {
+            false
+        }
     }
 }
 
