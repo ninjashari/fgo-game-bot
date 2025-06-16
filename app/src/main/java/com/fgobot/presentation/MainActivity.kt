@@ -10,13 +10,16 @@
  * - Navigation framework ready
  * - Accessibility service integration
  * - Runtime permission handling
+ * - Screen capture permission management
  */
 
 package com.fgobot.presentation
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -48,11 +51,15 @@ class MainActivity : ComponentActivity() {
     
     companion object {
         private const val TAG = "MainActivity"
+        private const val REQUEST_CODE_SCREEN_CAPTURE = 1001
     }
     
     // TODO: Implement proper dependency injection
     private lateinit var automationViewModel: AutomationViewModel
     private val logger = FGOBotLogger
+    
+    // MediaProjection for screen capture
+    private lateinit var mediaProjectionManager: MediaProjectionManager
     
     // Permission request launchers
     private val requestPermissionLauncher = registerForActivityResult(
@@ -61,6 +68,9 @@ class MainActivity : ComponentActivity() {
         permissions.entries.forEach { (permission, isGranted) ->
             logger.info(FGOBotLogger.Category.GENERAL, "Permission $permission: ${if (isGranted) "granted" else "denied"}")
         }
+        
+        // Update ViewModel with permission status
+        automationViewModel.updatePermissionStatus()
     }
     
     private val overlayPermissionLauncher = registerForActivityResult(
@@ -71,8 +81,25 @@ class MainActivity : ComponentActivity() {
         } else {
             logger.warn(FGOBotLogger.Category.GENERAL, "Overlay permission denied")
         }
+        
+        // Update ViewModel with permission status
+        automationViewModel.updatePermissionStatus()
     }
     
+    private val screenCapturePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            logger.info(FGOBotLogger.Category.GENERAL, "Screen capture permission granted")
+            
+            // Initialize automation with screen capture permission
+            automationViewModel.initializeAutomationWithPermission(result.resultCode, result.data!!)
+        } else {
+            logger.warn(FGOBotLogger.Category.GENERAL, "Screen capture permission denied")
+            automationViewModel.updatePermissionStatus()
+        }
+    }
+
     /**
      * Called when the activity is first created.
      * Sets up the Compose UI with the FGO Bot theme and navigation.
@@ -81,6 +108,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         
         logger.info(FGOBotLogger.Category.GENERAL, "MainActivity onCreate")
+        
+        // Initialize MediaProjectionManager
+        mediaProjectionManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         
         // Request necessary permissions
         requestRequiredPermissions()
@@ -96,6 +126,11 @@ class MainActivity : ComponentActivity() {
             AutomationViewModelFactory(application, teamRepository, battleLogRepository)
         )[AutomationViewModel::class.java]
         
+        // Set screen capture permission launcher
+        automationViewModel.setScreenCapturePermissionLauncher { intent ->
+            screenCapturePermissionLauncher.launch(intent)
+        }
+        
         setContent {
             FGOBotTheme {
                 // A surface container using the 'background' color from the theme
@@ -108,7 +143,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    
+
     /**
      * Request all required permissions for the app to function properly
      */
@@ -168,6 +203,15 @@ class MainActivity : ComponentActivity() {
             )
             overlayPermissionLauncher.launch(intent)
         }
+    }
+    
+    /**
+     * Request screen capture permission
+     */
+    fun requestScreenCapturePermission() {
+        logger.info(FGOBotLogger.Category.GENERAL, "Requesting screen capture permission")
+        val intent = mediaProjectionManager.createScreenCaptureIntent()
+        screenCapturePermissionLauncher.launch(intent)
     }
     
     // TODO: Replace with proper dependency injection

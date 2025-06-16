@@ -10,12 +10,17 @@
  * - Real-time statistics updates
  * - Team selection and configuration
  * - Error handling and user feedback
+ * - Permission status management
+ * - Screen capture permission handling
  */
 
 package com.fgobot.presentation.viewmodel
 
 import android.app.Application
+import android.content.Context
 import android.content.Intent
+import android.media.projection.MediaProjectionManager
+import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.fgobot.core.automation.AutomationController
@@ -41,6 +46,7 @@ data class AutomationUiState(
     val availableTeams: List<Team> = emptyList(),
     val recentBattleLogs: List<BattleLog> = emptyList(),
     val isAccessibilityServiceEnabled: Boolean = false,
+    val isScreenCapturePermissionGranted: Boolean = false,
     val isInitialized: Boolean = false,
     val errorMessage: String? = null,
     val isLoading: Boolean = false
@@ -58,6 +64,7 @@ sealed class AutomationAction {
     object RefreshTeams : AutomationAction()
     object ClearError : AutomationAction()
     data class InitializeAutomation(val resultCode: Int, val data: Intent) : AutomationAction()
+    object RequestScreenCapturePermission : AutomationAction()
 }
 
 /**
@@ -76,6 +83,12 @@ class AutomationViewModel(
     
     // Automation controller (initialized when accessibility service is available)
     private var automationController: AutomationController? = null
+    
+    // Screen capture permission launcher
+    private var screenCapturePermissionLauncher: ((Intent) -> Unit)? = null
+    
+    // MediaProjection manager
+    private val mediaProjectionManager = application.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
     
     // UI state
     private val _uiState = MutableStateFlow(AutomationUiState())
@@ -96,14 +109,21 @@ class AutomationViewModel(
     }
     
     /**
+     * Set screen capture permission launcher
+     */
+    fun setScreenCapturePermissionLauncher(launcher: (Intent) -> Unit) {
+        screenCapturePermissionLauncher = launcher
+    }
+    
+    /**
      * Initialize the ViewModel with initial data
      */
     private suspend fun initializeViewModel() {
         try {
             _uiState.value = _uiState.value.copy(isLoading = true)
             
-            // Check accessibility service status
-            val isAccessibilityEnabled = FGOAccessibilityService.isServiceRunning()
+            // Check all permission statuses
+            updatePermissionStatus()
             
             // Load available teams
             val teams = teamRepository.getAllTeams().first()
@@ -114,7 +134,6 @@ class AutomationViewModel(
             _uiState.value = _uiState.value.copy(
                 availableTeams = teams,
                 recentBattleLogs = recentLogs,
-                isAccessibilityServiceEnabled = isAccessibilityEnabled,
                 isLoading = false
             )
             
@@ -130,36 +149,39 @@ class AutomationViewModel(
     }
     
     /**
-     * Start periodic updates for real-time data
+     * Update all permission statuses
      */
-    private fun startPeriodicUpdates() {
-        viewModelScope.launch {
-            while (true) {
-                updateAccessibilityServiceStatus()
-                updateAutomationState()
-                delay(1000L) // Update every second
+    fun updatePermissionStatus() {
+        val isAccessibilityEnabled = FGOAccessibilityService.isServiceRunning()
+        val isScreenCaptureGranted = _uiState.value.isInitialized // Screen capture is granted if automation is initialized
+        
+        _uiState.value = _uiState.value.copy(
+            isAccessibilityServiceEnabled = isAccessibilityEnabled,
+            isScreenCapturePermissionGranted = isScreenCaptureGranted
+        )
+        
+        // Initialize automation controller when accessibility service becomes available
+        if (isAccessibilityEnabled && automationController == null) {
+            val service = FGOAccessibilityService.getInstance()
+            if (service != null) {
+                automationController = AutomationController(
+                    getApplication(),
+                    service,
+                    logger
+                )
             }
         }
     }
     
     /**
-     * Update accessibility service status
+     * Start periodic updates for real-time data
      */
-    private fun updateAccessibilityServiceStatus() {
-        val isEnabled = FGOAccessibilityService.isServiceRunning()
-        if (_uiState.value.isAccessibilityServiceEnabled != isEnabled) {
-            _uiState.value = _uiState.value.copy(isAccessibilityServiceEnabled = isEnabled)
-            
-            // Initialize automation controller when service becomes available
-            if (isEnabled && automationController == null) {
-                val service = FGOAccessibilityService.getInstance()
-                if (service != null) {
-                    automationController = AutomationController(
-                        getApplication(),
-                        service,
-                        logger
-                    )
-                }
+    private fun startPeriodicUpdates() {
+        viewModelScope.launch {
+            while (true) {
+                updatePermissionStatus()
+                updateAutomationState()
+                delay(2000L) // Update every 2 seconds
             }
         }
     }
@@ -207,6 +229,7 @@ class AutomationViewModel(
                     is AutomationAction.RefreshTeams -> refreshTeams()
                     is AutomationAction.ClearError -> clearError()
                     is AutomationAction.InitializeAutomation -> initializeAutomation(action.resultCode, action.data)
+                    is AutomationAction.RequestScreenCapturePermission -> requestScreenCapturePermission()
                 }
             } catch (e: Exception) {
                 logger.error(FGOBotLogger.Category.UI, "Error handling action: $action", e)
@@ -307,14 +330,74 @@ class AutomationViewModel(
             return
         }
         
-        val success = controller.initialize(resultCode, data)
-        _uiState.value = _uiState.value.copy(
-            isInitialized = success,
-            errorMessage = if (!success) "Failed to initialize automation" else null
-        )
-        
-        if (success) {
-            logger.info(FGOBotLogger.Category.UI, "Automation initialized successfully")
+        try {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            
+            val success = controller.initialize(resultCode, data)
+            _uiState.value = _uiState.value.copy(
+                isInitialized = success,
+                isLoading = false,
+                errorMessage = if (!success) "Failed to initialize automation" else null
+            )
+            
+            if (success) {
+                logger.info(FGOBotLogger.Category.UI, "Automation initialized successfully")
+            } else {
+                logger.error(FGOBotLogger.Category.UI, "Automation initialization failed")
+            }
+            
+        } catch (e: Exception) {
+            logger.error(FGOBotLogger.Category.UI, "Error during automation initialization", e)
+            _uiState.value = _uiState.value.copy(
+                isInitialized = false,
+                isLoading = false,
+                errorMessage = "Initialization error: ${e.message}"
+            )
+        }
+    }
+    
+    /**
+     * Request screen capture permission
+     */
+    private fun requestScreenCapturePermission() {
+        try {
+            val intent = mediaProjectionManager.createScreenCaptureIntent()
+            screenCapturePermissionLauncher?.invoke(intent)
+            logger.info(FGOBotLogger.Category.UI, "Screen capture permission requested")
+        } catch (e: Exception) {
+            logger.error(FGOBotLogger.Category.UI, "Error requesting screen capture permission", e)
+            _uiState.value = _uiState.value.copy(errorMessage = "Failed to request screen capture permission: ${e.message}")
+        }
+    }
+    
+    /**
+     * Initialize automation with screen capture permission
+     */
+    fun initializeAutomationWithPermission(resultCode: Int, data: Intent) {
+        viewModelScope.launch {
+            initializeAutomation(resultCode, data)
+        }
+    }
+    
+    /**
+     * Check if automation is ready to start
+     */
+    fun isAutomationReady(): Boolean {
+        return _uiState.value.isAccessibilityServiceEnabled &&
+                _uiState.value.isInitialized &&
+                _selectedTeam.value != null
+    }
+    
+    /**
+     * Get detailed automation status
+     */
+    fun getDetailedStatus(): String {
+        val uiState = _uiState.value
+        return when {
+            !uiState.isAccessibilityServiceEnabled -> "Accessibility service not enabled"
+            !uiState.isInitialized -> "Screen capture permission not granted"
+            _selectedTeam.value == null -> "No team selected"
+            else -> "Ready to start automation"
         }
     }
     

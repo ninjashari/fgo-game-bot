@@ -259,8 +259,8 @@ private fun SystemStatusCard() {
             
             StatusItem(
                 label = "Screen Capture",
-                status = "Ready",
-                isGood = true
+                status = "Not Granted",
+                isGood = false
             )
             
             StatusItem(
