@@ -1,8 +1,8 @@
 /*
  * FGO Bot - Battle Log Repository
  * 
- * This file defines the repository interface and implementation for Battle Log data management.
- * Handles battle analytics, performance tracking, and data aggregation.
+ * This file defines the repository interface and implementation for BattleLog data management.
+ * Handles battle logging, analytics, and performance tracking.
  */
 
 package com.fgobot.data.repository
@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 
 /**
- * Repository interface for Battle Log data operations
+ * Repository interface for BattleLog data operations
  */
 interface BattleLogRepository {
     fun getAllBattleLogs(): Flow<List<BattleLog>>
@@ -30,8 +30,8 @@ interface BattleLogRepository {
  */
 data class BattleAnalytics(
     val totalBattles: Int,
-    val successfulBattles: Int,
-    val successRate: Double,
+    val victories: Int,
+    val winRate: Double,
     val averageDuration: Long
 )
 
@@ -67,15 +67,15 @@ class BattleLogRepositoryImpl(
     override fun getBattleLogsByQuest(questId: Int): Flow<List<BattleLog>> {
         return battleLogDao.getBattleLogsByQuest(questId)
             .catch { exception ->
-                logger.e(TAG, "Error getting battle logs by quest: $questId", exception)
-                throw FGOBotException.DatabaseException("Failed to get battle logs by quest", exception)
+                logger.e(TAG, "Error getting battle logs for quest: $questId", exception)
+                throw FGOBotException.DatabaseException("Failed to get battle logs for quest", exception)
             }
     }
     
     override suspend fun recordBattleLog(battleLog: BattleLog): Result<Long> {
         return try {
             val battleLogId = battleLogDao.insertBattleLog(battleLog)
-            logger.d(TAG, "Recorded battle log: Quest ${battleLog.questId}, Result: ${battleLog.result}")
+            logger.d(TAG, "Recorded new battle log with ID: $battleLogId")
             Result.success(battleLogId)
         } catch (exception: Exception) {
             logger.e(TAG, "Error recording battle log", exception)
@@ -86,20 +86,20 @@ class BattleLogRepositoryImpl(
     override suspend fun getBattleAnalytics(): BattleAnalytics {
         return try {
             val totalBattles = battleLogDao.getTotalBattleCount()
-            val successfulBattles = battleLogDao.getVictoryCount()
-            val successRate = if (totalBattles > 0) successfulBattles.toDouble() / totalBattles * 100 else 0.0
-            val averageDuration = (battleLogDao.getAverageBattleDuration() ?: 0.0).toLong()
+            val victories = battleLogDao.getVictoryCount()
+            val winRate = battleLogDao.getWinRatePercentage()
+            val averageDuration = battleLogDao.getAverageBattleDuration() ?: 0.0
             
             BattleAnalytics(
                 totalBattles = totalBattles,
-                successfulBattles = successfulBattles,
-                successRate = successRate,
-                averageDuration = averageDuration
+                victories = victories,
+                winRate = winRate,
+                averageDuration = averageDuration.toLong()
             )
             
         } catch (exception: Exception) {
             logger.e(TAG, "Error getting battle analytics", exception)
-            throw FGOBotException.DatabaseException("Failed to get battle analytics", exception)
+            throw FGOBotException.DatabaseException("Failed to get analytics", exception)
         }
     }
 } 

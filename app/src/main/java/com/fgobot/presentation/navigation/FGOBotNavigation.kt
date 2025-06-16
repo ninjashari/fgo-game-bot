@@ -99,6 +99,15 @@ fun FGOBotNavigation(
                 TeamsScreen(
                     onNavigateBack = {
                         navController.popBackStack()
+                    },
+                    onNavigateToHome = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 )
             }
@@ -107,6 +116,15 @@ fun FGOBotNavigation(
                 SettingsScreen(
                     onNavigateBack = {
                         navController.popBackStack()
+                    },
+                    onNavigateToHome = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 )
             }
@@ -115,6 +133,15 @@ fun FGOBotNavigation(
                 BattleLogsScreen(
                     onNavigateBack = {
                         navController.popBackStack()
+                    },
+                    onNavigateToHome = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 )
             }

@@ -91,7 +91,13 @@ fun AutomationScreen(
                 AutomationControlPanel(
                     uiState = uiState,
                     selectedTeam = selectedTeam,
-                    onStartAutomation = { viewModel.handleAction(AutomationAction.StartAutomation) },
+                    onStartAutomation = { 
+                    if (!uiState.isScreenCapturePermissionGranted) {
+                        viewModel.handleAction(AutomationAction.RequestScreenCapturePermission)
+                    } else {
+                        viewModel.handleAction(AutomationAction.StartAutomation)
+                    }
+                },
                     onStopAutomation = { viewModel.handleAction(AutomationAction.StopAutomation) },
                     onPauseAutomation = { viewModel.handleAction(AutomationAction.PauseAutomation) },
                     onResumeAutomation = { viewModel.handleAction(AutomationAction.ResumeAutomation) },
@@ -219,7 +225,7 @@ private fun StatusIndicator(
 }
 
 /**
- * Main automation control panel
+ * Automation control panel with enhanced functionality
  */
 @Composable
 private fun AutomationControlPanel(
@@ -239,7 +245,7 @@ private fun AutomationControlPanel(
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
                 text = "Automation Control",
@@ -247,23 +253,8 @@ private fun AutomationControlPanel(
                 fontWeight = FontWeight.Bold
             )
             
-            // Current team display
-            selectedTeam?.let { team ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Group,
-                        contentDescription = "Team",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = "Selected Team: ${team.name}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
+            // Status indicators
+            AutomationStatusIndicators(uiState = uiState, selectedTeam = selectedTeam)
             
             // Control buttons
             Row(
@@ -274,7 +265,7 @@ private fun AutomationControlPanel(
                 FGOBotSuccessButton(
                     text = "Start",
                     onClick = onStartAutomation,
-                    enabled = canStart,
+                    enabled = canStart && !uiState.isLoading,
                     modifier = Modifier.weight(1f)
                 )
                 
@@ -302,10 +293,29 @@ private fun AutomationControlPanel(
                 )
             }
             
+            // Loading indicator
+            if (uiState.isLoading) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Initializing automation...",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+            
             // Status text
-            if (!canStart && selectedTeam == null) {
+            if (!canStart && !uiState.isLoading) {
                 Text(
-                    text = "Please select a team to start automation",
+                    text = getStatusMessage(uiState, selectedTeam),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -313,6 +323,100 @@ private fun AutomationControlPanel(
                 )
             }
         }
+    }
+}
+
+/**
+ * Automation status indicators
+ */
+@Composable
+private fun AutomationStatusIndicators(
+    uiState: AutomationUiState,
+    selectedTeam: Team?
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Accessibility service status
+        StatusIndicatorRow(
+            label = "Accessibility Service",
+            isActive = uiState.isAccessibilityServiceEnabled,
+            activeText = "Enabled",
+            inactiveText = "Disabled"
+        )
+        
+        // Screen capture permission status
+        StatusIndicatorRow(
+            label = "Screen Capture",
+            isActive = uiState.isScreenCapturePermissionGranted,
+            activeText = "Permitted",
+            inactiveText = "Not Permitted"
+        )
+        
+        // Team selection status
+        StatusIndicatorRow(
+            label = "Team Selection",
+            isActive = selectedTeam != null,
+            activeText = selectedTeam?.name ?: "None",
+            inactiveText = "No team selected"
+        )
+    }
+}
+
+/**
+ * Status indicator row
+ */
+@Composable
+private fun StatusIndicatorRow(
+    label: String,
+    isActive: Boolean,
+    activeText: String,
+    inactiveText: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium
+        )
+        
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            StatusIndicator(
+                isActive = isActive,
+                color = if (isActive) Color.Green else Color.Red
+            )
+            
+            Text(
+                text = if (isActive) activeText else inactiveText,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isActive) 
+                    MaterialTheme.colorScheme.primary 
+                else 
+                    MaterialTheme.colorScheme.error
+            )
+        }
+    }
+}
+
+/**
+ * Gets appropriate status message
+ */
+private fun getStatusMessage(uiState: AutomationUiState, selectedTeam: Team?): String {
+    return when {
+        !uiState.isAccessibilityServiceEnabled -> 
+            "⚠️ Please enable accessibility service in Settings"
+        !uiState.isScreenCapturePermissionGranted -> 
+            "⚠️ Screen capture permission required - tap Start to grant"
+        selectedTeam == null -> 
+            "⚠️ Please select a team to start automation"
+        else -> 
+            "✅ Ready to start automation"
     }
 }
 

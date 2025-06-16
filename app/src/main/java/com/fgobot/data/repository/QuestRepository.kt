@@ -198,14 +198,22 @@ class QuestRepositoryImpl(
     
     override suspend fun updateQuestCompletion(questId: Int, isCompleted: Boolean): Result<Unit> {
         return try {
-            val rowsAffected = questDao.updateQuestCompletion(questId, isCompleted)
+            // Since we changed the DAO to increment completion count, we only call it if isCompleted is true
+            val rowsAffected = if (isCompleted) {
+                questDao.updateQuestCompletion(questId)
+            } else {
+                // For now, we don't support decrementing completion count
+                // This could be enhanced later if needed
+                logger.w(TAG, "Decrementing quest completion not supported for quest: $questId")
+                0
+            }
             
             if (rowsAffected > 0) {
                 logger.d(TAG, "Updated quest completion: $questId -> $isCompleted")
                 Result.success(Unit)
             } else {
-                logger.w(TAG, "No quest found with ID: $questId")
-                Result.failure(FGOBotException.DataNotFoundException("Quest not found"))
+                logger.w(TAG, "No quest found with ID: $questId or completion not updated")
+                Result.failure(FGOBotException.DataNotFoundException("Quest not found or not updated"))
             }
             
         } catch (exception: Exception) {

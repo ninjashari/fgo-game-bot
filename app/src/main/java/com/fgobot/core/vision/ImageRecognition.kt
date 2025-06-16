@@ -165,41 +165,23 @@ class ImageRecognition(
         return try {
             val startTime = System.currentTimeMillis()
             
-            // Check for different battle states using template matching
-            val stateTemplates = mapOf(
-                BattleState.QUEST_SELECTION to "quest_selection_screen",
-                BattleState.SUPPORT_SELECTION to "support_selection_screen",
-                BattleState.BATTLE_START to "battle_start_screen",
-                BattleState.COMMAND_SELECTION to "command_selection_screen",
-                BattleState.SKILL_SELECTION to "skill_selection_screen",
-                BattleState.NP_SELECTION to "np_selection_screen",
-                BattleState.BATTLE_RESULT to "battle_result_screen",
-                BattleState.AP_RECOVERY to "ap_recovery_screen"
-            )
+            // Enhanced battle state detection with multiple methods
+            var detectedState = detectBattleStateByTemplates(screenshot)
             
-            var detectedState = BattleState.UNKNOWN
-            var highestConfidence = 0.0
+            // If template matching fails, use fallback detection methods
+            if (detectedState == BattleState.UNKNOWN) {
+                detectedState = detectBattleStateByUIElements(screenshot)
+            }
             
-            for ((state, templateName) in stateTemplates) {
-                val template = templateAssetManager.getTemplate(templateName)
-                if (template != null) {
-                    val result = templateMatchingEngine.matchTemplate(
-                        screenshot,
-                        template,
-                        confidence = 0.7 // Lower threshold for state detection
-                    )
-                    
-                    if (result.found && result.confidence > highestConfidence) {
-                        detectedState = state
-                        highestConfidence = result.confidence
-                    }
-                }
+            // If still unknown, use color-based detection
+            if (detectedState == BattleState.UNKNOWN) {
+                detectedState = detectBattleStateByColors(screenshot)
             }
             
             val processingTime = System.currentTimeMillis() - startTime
             logger.debug(
                 FGOBotLogger.Category.VISION,
-                "Battle state detection completed in ${processingTime}ms: $detectedState (confidence: ${"%.3f".format(highestConfidence)})"
+                "Battle state detection completed in ${processingTime}ms: $detectedState"
             )
             
             detectedState
@@ -207,6 +189,175 @@ class ImageRecognition(
             logger.error(FGOBotLogger.Category.VISION, "Error detecting battle state", e)
             BattleState.ERROR_STATE
         }
+    }
+    
+    /**
+     * Detects battle state using template matching
+     */
+    private suspend fun detectBattleStateByTemplates(screenshot: Bitmap): BattleState {
+        // Check for different battle states using template matching
+        val stateTemplates = mapOf(
+            BattleState.QUEST_SELECTION to "quest_selection_screen",
+            BattleState.SUPPORT_SELECTION to "support_selection_screen",
+            BattleState.BATTLE_START to "battle_start_screen",
+            BattleState.COMMAND_SELECTION to "command_selection_screen",
+            BattleState.SKILL_SELECTION to "skill_selection_screen",
+            BattleState.NP_SELECTION to "np_selection_screen",
+            BattleState.BATTLE_RESULT to "battle_result_screen",
+            BattleState.AP_RECOVERY to "ap_recovery_screen"
+        )
+        
+        var detectedState = BattleState.UNKNOWN
+        var highestConfidence = 0.0
+        
+        for ((state, templateName) in stateTemplates) {
+            val template = templateAssetManager.getTemplate(templateName)
+            if (template != null) {
+                val result = templateMatchingEngine.matchTemplate(
+                    screenshot,
+                    template,
+                    confidence = 0.7 // Lower threshold for state detection
+                )
+                
+                if (result.found && result.confidence > highestConfidence) {
+                    detectedState = state
+                    highestConfidence = result.confidence
+                }
+            }
+        }
+        
+        return detectedState
+    }
+    
+    /**
+     * Detects battle state by analyzing UI elements
+     */
+    private suspend fun detectBattleStateByUIElements(screenshot: Bitmap): BattleState {
+        // Check for specific UI elements that indicate battle states
+        
+        // Check for Attack button (indicates command selection)
+        val attackButton = findTemplate(screenshot, "attack_button", REGIONS["attack_button"], 0.6)
+        if (attackButton.found) {
+            return BattleState.COMMAND_SELECTION
+        }
+        
+        // Check for AP recovery elements
+        val apRecovery = findTemplate(screenshot, "ap_recovery_button", null, 0.6)
+        if (apRecovery.found) {
+            return BattleState.AP_RECOVERY
+        }
+        
+        // Check for battle result elements
+        val battleResult = findTemplate(screenshot, "battle_complete", null, 0.6)
+        if (battleResult.found) {
+            return BattleState.BATTLE_RESULT
+        }
+        
+        // Check for support selection elements
+        val supportList = findTemplate(screenshot, "support_servant", REGIONS["support_list"], 0.6)
+        if (supportList.found) {
+            return BattleState.SUPPORT_SELECTION
+        }
+        
+        return BattleState.UNKNOWN
+    }
+    
+    /**
+     * Detects battle state by analyzing screen colors and layout
+     */
+    private suspend fun detectBattleStateByColors(screenshot: Bitmap): BattleState {
+        // Analyze specific screen regions for characteristic colors
+        
+        // Command selection screen has distinctive card area
+        if (hasCommandCardArea(screenshot)) {
+            return BattleState.COMMAND_SELECTION
+        }
+        
+        // AP recovery screen has distinctive blue background
+        if (hasAPRecoveryColors(screenshot)) {
+            return BattleState.AP_RECOVERY
+        }
+        
+        // Battle result screen has distinctive result colors
+        if (hasBattleResultColors(screenshot)) {
+            return BattleState.BATTLE_RESULT
+        }
+        
+        return BattleState.UNKNOWN
+    }
+    
+    /**
+     * Checks if screenshot has command card area
+     */
+    private fun hasCommandCardArea(screenshot: Bitmap): Boolean {
+        // Check the bottom area where command cards appear
+        val cardRegion = REGIONS["command_cards"]?.rect ?: return false
+        
+        // Sample pixels in the card area to detect card-like colors
+        val samplePoints = listOf(
+            android.graphics.Point(200, 1400),
+            android.graphics.Point(540, 1400),
+            android.graphics.Point(880, 1400)
+        )
+        
+        var cardColorCount = 0
+        for (point in samplePoints) {
+            if (point.x < screenshot.width && point.y < screenshot.height) {
+                val pixel = screenshot.getPixel(point.x, point.y)
+                // Check for card-like colors (not pure black/white)
+                val red = (pixel shr 16) and 0xFF
+                val green = (pixel shr 8) and 0xFF
+                val blue = pixel and 0xFF
+                
+                if (red > 50 && green > 50 && blue > 50 && 
+                    (red < 200 || green < 200 || blue < 200)) {
+                    cardColorCount++
+                }
+            }
+        }
+        
+        return cardColorCount >= 2
+    }
+    
+    /**
+     * Checks if screenshot has AP recovery colors
+     */
+    private fun hasAPRecoveryColors(screenshot: Bitmap): Boolean {
+        // AP recovery screen typically has blue background
+        val centerPoint = android.graphics.Point(screenshot.width / 2, screenshot.height / 2)
+        val pixel = screenshot.getPixel(centerPoint.x, centerPoint.y)
+        
+        val red = (pixel shr 16) and 0xFF
+        val green = (pixel shr 8) and 0xFF
+        val blue = pixel and 0xFF
+        
+        // Check for blue-dominant colors
+        return blue > red + 30 && blue > green + 30 && blue > 100
+    }
+    
+    /**
+     * Checks if screenshot has battle result colors
+     */
+    private fun hasBattleResultColors(screenshot: Bitmap): Boolean {
+        // Battle result screen typically has gold/yellow elements
+        val samplePoints = listOf(
+            android.graphics.Point(screenshot.width / 2, screenshot.height / 3),
+            android.graphics.Point(screenshot.width / 2, screenshot.height * 2 / 3)
+        )
+        
+        for (point in samplePoints) {
+            val pixel = screenshot.getPixel(point.x, point.y)
+            val red = (pixel shr 16) and 0xFF
+            val green = (pixel shr 8) and 0xFF
+            val blue = pixel and 0xFF
+            
+            // Check for gold/yellow colors
+            if (red > 150 && green > 150 && blue < 100) {
+                return true
+            }
+        }
+        
+        return false
     }
     
     /**
