@@ -9,23 +9,33 @@
  * - Material Design 3 theming
  * - Navigation framework ready
  * - Accessibility service integration
+ * - Runtime permission handling
  */
 
 package com.fgobot.presentation
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.fgobot.presentation.navigation.FGOBotNavigation
 import com.fgobot.presentation.theme.FGOBotTheme
 import com.fgobot.presentation.viewmodel.AutomationViewModel
 import com.fgobot.data.repository.TeamRepository
 import com.fgobot.data.repository.BattleLogRepository
+import com.fgobot.core.logging.FGOBotLogger
 
 /**
  * MainActivity - Primary activity for the FGO Bot application
@@ -36,8 +46,32 @@ import com.fgobot.data.repository.BattleLogRepository
  */
 class MainActivity : ComponentActivity() {
     
+    companion object {
+        private const val TAG = "MainActivity"
+    }
+    
     // TODO: Implement proper dependency injection
     private lateinit var automationViewModel: AutomationViewModel
+    private val logger = FGOBotLogger
+    
+    // Permission request launchers
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        permissions.entries.forEach { (permission, isGranted) ->
+            logger.info(FGOBotLogger.Category.GENERAL, "Permission $permission: ${if (isGranted) "granted" else "denied"}")
+        }
+    }
+    
+    private val overlayPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (Settings.canDrawOverlays(this)) {
+            logger.info(FGOBotLogger.Category.GENERAL, "Overlay permission granted")
+        } else {
+            logger.warn(FGOBotLogger.Category.GENERAL, "Overlay permission denied")
+        }
+    }
     
     /**
      * Called when the activity is first created.
@@ -45,6 +79,11 @@ class MainActivity : ComponentActivity() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        logger.info(FGOBotLogger.Category.GENERAL, "MainActivity onCreate")
+        
+        // Request necessary permissions
+        requestRequiredPermissions()
         
         // TODO: Replace with proper dependency injection
         // For now, we'll create placeholder repositories
@@ -67,6 +106,67 @@ class MainActivity : ComponentActivity() {
                     FGOBotNavigation(automationViewModel = automationViewModel)
                 }
             }
+        }
+    }
+    
+    /**
+     * Request all required permissions for the app to function properly
+     */
+    private fun requestRequiredPermissions() {
+        val permissionsToRequest = mutableListOf<String>()
+        
+        // Storage permissions (for Android 12 and below)
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) 
+                != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+            
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) 
+                != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+        }
+        
+        // Media permissions for Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) 
+                != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.READ_MEDIA_IMAGES)
+            }
+            
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) 
+                != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.READ_MEDIA_VIDEO)
+            }
+            
+            // Notification permission for Android 13+
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) 
+                != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+        
+        // Camera permission (some devices require this for screen capture)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) 
+            != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.CAMERA)
+        }
+        
+        // Request dangerous permissions
+        if (permissionsToRequest.isNotEmpty()) {
+            logger.info(FGOBotLogger.Category.GENERAL, "Requesting permissions: ${permissionsToRequest.joinToString()}")
+            requestPermissionLauncher.launch(permissionsToRequest.toTypedArray())
+        }
+        
+        // Request overlay permission (SYSTEM_ALERT_WINDOW)
+        if (!Settings.canDrawOverlays(this)) {
+            logger.info(FGOBotLogger.Category.GENERAL, "Requesting overlay permission")
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            overlayPermissionLauncher.launch(intent)
         }
     }
     
