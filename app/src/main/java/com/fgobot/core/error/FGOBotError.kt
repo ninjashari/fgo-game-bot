@@ -168,6 +168,39 @@ sealed class FGOBotError : Exception() {
 }
 
 /**
+ * Legacy exception class for backward compatibility
+ * 
+ * Provides the exception types expected by existing code.
+ */
+sealed class FGOBotException(message: String, cause: Throwable? = null) : Exception(message, cause) {
+    
+    /**
+     * Network-related exceptions
+     */
+    class NetworkException(message: String, cause: Throwable? = null) : FGOBotException(message, cause)
+    
+    /**
+     * Database-related exceptions
+     */
+    class DatabaseException(message: String, cause: Throwable? = null) : FGOBotException(message, cause)
+    
+    /**
+     * Data not found exceptions
+     */
+    class DataNotFoundException(message: String, cause: Throwable? = null) : FGOBotException(message, cause)
+    
+    /**
+     * Synchronization exceptions
+     */
+    class SyncException(message: String, cause: Throwable? = null) : FGOBotException(message, cause)
+    
+    /**
+     * Unknown exceptions
+     */
+    class UnknownException(message: String, cause: Throwable? = null) : FGOBotException(message, cause)
+}
+
+/**
  * Extension function to convert throwables to FGOBotError
  * 
  * @return Appropriate FGOBotError based on the throwable type

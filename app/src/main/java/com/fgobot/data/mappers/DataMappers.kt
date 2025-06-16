@@ -79,7 +79,7 @@ fun ApiServant.toEntity(
  * @param ownedServantIds Set of owned servant IDs for ownership mapping
  * @return List of Servant entities
  */
-fun List<ApiServant>.toEntities(ownedServantIds: Set<Int> = emptySet()): List<Servant> {
+fun List<ApiServant>.toServantEntities(ownedServantIds: Set<Int> = emptySet()): List<Servant> {
     return this.map { apiServant ->
         apiServant.toEntity(isOwned = ownedServantIds.contains(apiServant.id))
     }
@@ -164,7 +164,7 @@ fun ApiCraftEssence.toEntity(
  * @param ownedCraftEssenceIds Set of owned craft essence IDs for ownership mapping
  * @return List of CraftEssence entities
  */
-fun List<ApiCraftEssence>.toEntities(ownedCraftEssenceIds: Set<Int> = emptySet()): List<CraftEssence> {
+fun List<ApiCraftEssence>.toCraftEssenceEntities(ownedCraftEssenceIds: Set<Int> = emptySet()): List<CraftEssence> {
     return this.map { apiCraftEssence ->
         apiCraftEssence.toEntity(isOwned = ownedCraftEssenceIds.contains(apiCraftEssence.id))
     }
@@ -237,7 +237,7 @@ fun ApiQuest.toEntity(
  * @param completedQuestCounts Map of quest ID to completion count
  * @return List of Quest entities
  */
-fun List<ApiQuest>.toEntities(
+fun List<ApiQuest>.toQuestEntities(
     unlockedQuestIds: Set<Int> = emptySet(),
     completedQuestCounts: Map<Int, Int> = emptyMap()
 ): List<Quest> {

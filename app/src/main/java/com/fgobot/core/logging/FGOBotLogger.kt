@@ -17,6 +17,42 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 /**
+ * Simple logger interface for consistent logging across the application
+ */
+interface FGOLogger {
+    fun v(tag: String, message: String, throwable: Throwable? = null)
+    fun d(tag: String, message: String, throwable: Throwable? = null)
+    fun i(tag: String, message: String, throwable: Throwable? = null)
+    fun w(tag: String, message: String, throwable: Throwable? = null)
+    fun e(tag: String, message: String, throwable: Throwable? = null)
+}
+
+/**
+ * Implementation of FGOLogger using FGOBotLogger
+ */
+class FGOLoggerImpl : FGOLogger {
+    override fun v(tag: String, message: String, throwable: Throwable?) {
+        FGOBotLogger.verbose(FGOBotLogger.Category.GENERAL, "[$tag] $message", throwable)
+    }
+    
+    override fun d(tag: String, message: String, throwable: Throwable?) {
+        FGOBotLogger.debug(FGOBotLogger.Category.GENERAL, "[$tag] $message", throwable)
+    }
+    
+    override fun i(tag: String, message: String, throwable: Throwable?) {
+        FGOBotLogger.info(FGOBotLogger.Category.GENERAL, "[$tag] $message", throwable)
+    }
+    
+    override fun w(tag: String, message: String, throwable: Throwable?) {
+        FGOBotLogger.warn(FGOBotLogger.Category.GENERAL, "[$tag] $message", throwable)
+    }
+    
+    override fun e(tag: String, message: String, throwable: Throwable?) {
+        FGOBotLogger.error(FGOBotLogger.Category.ERROR, "[$tag] $message", throwable)
+    }
+}
+
+/**
  * Centralized logging system for FGO Bot application
  * 
  * Provides structured logging with different levels, categories, and output destinations.
