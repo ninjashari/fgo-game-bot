@@ -147,6 +147,7 @@ dependencies {
     // ViewModel and LiveData
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
 
     // Room Database
     implementation("androidx.room:room-runtime:2.6.1")
