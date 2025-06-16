@@ -14,8 +14,4 @@
     
     <!-- Exclude sensitive files -->
     <exclude domain="sharedpref" path="api_keys.xml" />
-    <exclude domain="database" path="temp_cache.db" />
-    
-    <!-- Exclude cache directories -->
-    <exclude domain="cache" path="." />
 </full-backup-content> 

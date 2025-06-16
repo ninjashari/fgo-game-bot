@@ -15,6 +15,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     kotlin("kapt")
+    id("kotlin-parcelize")
 }
 
 android {
@@ -38,6 +39,22 @@ android {
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
         }
+
+        // NDK configuration for future native extensions
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
+        
+        // External native build configuration (optional for future extensions)
+        externalNativeBuild {
+            cmake {
+                cppFlags += "-std=c++17"
+                arguments += listOf(
+                    "-DANDROID_STL=c++_shared",
+                    "-DANDROID_PLATFORM=android-26"
+                )
+            }
+        }
     }
 
     buildTypes {
@@ -52,6 +69,10 @@ android {
             isDebuggable = true
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            // Preserve native debug symbols for debugging
+            packagingOptions {
+                doNotStrip("**/**.so")
+            }
         }
     }
 
@@ -62,20 +83,43 @@ android {
 
     kotlinOptions {
         jvmTarget = "11"
+        freeCompilerArgs += listOf(
+            "-opt-in=kotlin.RequiresOptIn"
+        )
     }
 
     buildFeatures {
         compose = true
         buildConfig = true
+        // Enable AIDL for future compatibility
+        aidl = true
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
+        kotlinCompilerExtensionVersion = "1.5.5"
     }
 
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+        // Ensure native libraries are included
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+    
+    lint {
+        baseline = file("lint-baseline.xml")
+        abortOnError = false
+        warningsAsErrors = false
+    }
+
+    // External native build configuration
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
         }
     }
 }
@@ -103,6 +147,7 @@ dependencies {
     // ViewModel and LiveData
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
 
     // Room Database
     implementation("androidx.room:room-runtime:2.6.1")
@@ -122,11 +167,15 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
+    // Logging
+    implementation("com.jakewharton.timber:timber:5.0.1")
+
     // Dependency Injection (Hilt) - Optional for future use
     // implementation("com.google.dagger:hilt-android:2.48.1")
     // kapt("com.google.dagger:hilt-compiler:2.48.1")
 
-    // Image Processing (for future screen capture functionality)
+    // Image Processing (for screen capture functionality)
+    // Note: OpenCV will be added as a local module in Phase 4
     // implementation("org.opencv:opencv-android:4.8.0")
 
     // Machine Learning (for future text recognition)
@@ -152,4 +201,18 @@ dependencies {
     // Debug dependencies
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    // OpenCV 4.9.0 from Maven Central - Phase 4 Integration
+    implementation("org.opencv:opencv:4.9.0")
+    
+    // TensorFlow Lite for machine learning models - Phase 4 AI Features
+    implementation("org.tensorflow:tensorflow-lite:2.13.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.13.0")
+    
+    // ML Kit for text recognition - Phase 4 OCR
+    implementation("com.google.mlkit:text-recognition:16.0.0")
+    
+    // Performance monitoring
+    implementation("androidx.benchmark:benchmark-common:1.2.2")
 } 

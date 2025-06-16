@@ -16,38 +16,46 @@ package com.fgobot.presentation
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import com.fgobot.R
+import androidx.lifecycle.ViewModelProvider
+import com.fgobot.presentation.navigation.FGOBotNavigation
 import com.fgobot.presentation.theme.FGOBotTheme
+import com.fgobot.presentation.viewmodel.AutomationViewModel
+import com.fgobot.data.repository.TeamRepository
+import com.fgobot.data.repository.BattleLogRepository
 
 /**
  * MainActivity - Primary activity for the FGO Bot application
  * 
  * This activity serves as the main entry point and container for the
  * Jetpack Compose UI. It handles the overall app navigation and
- * lifecycle management.
+ * lifecycle management with the new navigation system.
  */
 class MainActivity : ComponentActivity() {
     
+    // TODO: Implement proper dependency injection
+    private lateinit var automationViewModel: AutomationViewModel
+    
     /**
      * Called when the activity is first created.
-     * Sets up the Compose UI with the FGO Bot theme.
+     * Sets up the Compose UI with the FGO Bot theme and navigation.
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // TODO: Replace with proper dependency injection
+        // For now, we'll create placeholder repositories
+        val teamRepository = createPlaceholderTeamRepository()
+        val battleLogRepository = createPlaceholderBattleLogRepository()
+        
+        // Create ViewModel with factory
+        automationViewModel = ViewModelProvider(
+            this,
+            AutomationViewModelFactory(application, teamRepository, battleLogRepository)
+        )[AutomationViewModel::class.java]
         
         setContent {
             FGOBotTheme {
@@ -56,69 +64,52 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreen()
+                    FGOBotNavigation(automationViewModel = automationViewModel)
                 }
             }
+        }
+    }
+    
+    // TODO: Replace with proper dependency injection
+    private fun createPlaceholderTeamRepository(): TeamRepository {
+        // This is a placeholder - in a real implementation, this would be injected
+        return object : TeamRepository {
+            override fun getAllTeams() = kotlinx.coroutines.flow.flowOf(emptyList<com.fgobot.data.database.entities.Team>())
+            override suspend fun getTeamById(teamId: Long) = null
+            override suspend fun createTeam(team: com.fgobot.data.database.entities.Team) = Result.success(0L)
+            override suspend fun updateTeam(team: com.fgobot.data.database.entities.Team) = Result.success(Unit)
+            override suspend fun deleteTeam(teamId: Long) = Result.success(Unit)
+            override suspend fun getTeamStats() = com.fgobot.data.repository.TeamStats(0)
+        }
+    }
+    
+    private fun createPlaceholderBattleLogRepository(): BattleLogRepository {
+        // This is a placeholder - in a real implementation, this would be injected
+        return object : BattleLogRepository {
+            override fun getAllBattleLogs() = kotlinx.coroutines.flow.flowOf(emptyList<com.fgobot.data.database.entities.BattleLog>())
+            override suspend fun getBattleLogById(battleLogId: Long) = null
+            override fun getBattleLogsByQuest(questId: Int) = kotlinx.coroutines.flow.flowOf(emptyList<com.fgobot.data.database.entities.BattleLog>())
+            override suspend fun recordBattleLog(battleLog: com.fgobot.data.database.entities.BattleLog) = Result.success(0L)
+            override suspend fun getBattleAnalytics() = com.fgobot.data.repository.BattleAnalytics(0, 0, 0.0, 0L)
         }
     }
 }
 
 /**
- * MainScreen - Primary composable for the main screen
- * 
- * This composable displays the main interface of the FGO Bot application.
- * Currently shows a welcome message and app information.
+ * ViewModel factory for AutomationViewModel
+ * TODO: Replace with proper dependency injection framework
  */
-@Composable
-fun MainScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = stringResource(id = R.string.main_title),
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Center
-        )
-        
-        Text(
-            text = stringResource(id = R.string.main_subtitle),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-        
-        Text(
-            text = "Welcome to FGO Bot! This application will help you automate your Fate/Grand Order gameplay with intelligent decision making.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 24.dp)
-        )
-        
-        Text(
-            text = "Version 1.0.0 - Android 14 Ready",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 16.dp)
-        )
-    }
-}
-
-/**
- * Preview function for the MainScreen composable
- * Allows viewing the UI in Android Studio's design preview
- */
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
-    FGOBotTheme {
-        MainScreen()
+class AutomationViewModelFactory(
+    private val application: android.app.Application,
+    private val teamRepository: TeamRepository,
+    private val battleLogRepository: BattleLogRepository
+) : ViewModelProvider.Factory {
+    
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(AutomationViewModel::class.java)) {
+            return AutomationViewModel(application, teamRepository, battleLogRepository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 } 
