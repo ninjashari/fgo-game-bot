@@ -23,6 +23,7 @@ import android.os.HandlerThread
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import com.fgobot.core.logging.FGOBotLogger
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.nio.ByteBuffer
 import kotlin.coroutines.resume
@@ -88,26 +89,98 @@ class ScreenCapture(
         return try {
             logger.info(FGOBotLogger.Category.AUTOMATION, "Initializing screen capture system")
             
-            // Create MediaProjection
+            // FGA-inspired approach: Direct MediaProjection creation without complex setup
             mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, data)
+            
+            if (mediaProjection == null) {
+                logger.error(FGOBotLogger.Category.AUTOMATION, "Failed to create MediaProjection")
+                return false
+            }
             
             // Setup background thread for image processing
             backgroundThread = HandlerThread("ScreenCapture").apply { start() }
             backgroundHandler = Handler(backgroundThread!!.looper)
             
-            // Setup ImageReader
+            // Setup ImageReader with FGA-inspired configuration
             setupImageReader()
             
-            // Create VirtualDisplay
+            // Create VirtualDisplay with immediate validation
             createVirtualDisplay()
+            
+            // Validate setup
+            if (virtualDisplay == null || imageReader == null) {
+                logger.error(FGOBotLogger.Category.AUTOMATION, "Failed to create VirtualDisplay or ImageReader")
+                cleanup()
+                return false
+            }
             
             isCapturing = true
             logger.info(FGOBotLogger.Category.AUTOMATION, "Screen capture system initialized successfully")
-            true
+            
+            // FGA-inspired: Test capture immediately to ensure it works
+            return testCapture()
+            
         } catch (e: Exception) {
             logger.error(FGOBotLogger.Category.AUTOMATION, "Failed to initialize screen capture", e)
             cleanup()
             false
+        }
+    }
+    
+    /**
+     * FGA-inspired: Test capture to ensure system is working
+     */
+    private suspend fun testCapture(): Boolean {
+        return try {
+            logger.debug(FGOBotLogger.Category.AUTOMATION, "Testing screen capture...")
+            
+            // Wait a moment for the virtual display to stabilize
+            kotlinx.coroutines.delay(500)
+            
+            // Try to capture a test image
+            val testResult = captureScreenSync()
+            val success = testResult is CaptureResult.Success
+            
+            if (success) {
+                logger.info(FGOBotLogger.Category.AUTOMATION, "Screen capture test successful")
+            } else {
+                logger.error(FGOBotLogger.Category.AUTOMATION, "Screen capture test failed: $testResult")
+            }
+            
+            success
+        } catch (e: Exception) {
+            logger.error(FGOBotLogger.Category.AUTOMATION, "Screen capture test exception", e)
+            false
+        }
+    }
+    
+    /**
+     * FGA-inspired: Synchronous screen capture without coroutine suspension
+     */
+    private fun captureScreenSync(): CaptureResult {
+        if (!isCapturing || imageReader == null) {
+            return CaptureResult.Error("Screen capture not initialized")
+        }
+        
+        return try {
+            val image = imageReader?.acquireLatestImage()
+            if (image != null) {
+                val bitmap = convertImageToBitmap(image)
+                image.close()
+                
+                captureCount++
+                lastCaptureTime = System.currentTimeMillis()
+                
+                logger.debug(FGOBotLogger.Category.AUTOMATION, 
+                    "Screenshot captured (${bitmap.width}x${bitmap.height})")
+                
+                CaptureResult.Success(bitmap, lastCaptureTime)
+            } else {
+                CaptureResult.Error("No image available")
+            }
+        } catch (e: Exception) {
+            logger.error(FGOBotLogger.Category.AUTOMATION, "Error capturing screen", e)
+            CaptureResult.Error("Capture failed: ${e.message}", e)
         }
     }
     
@@ -121,43 +194,29 @@ class ScreenCapture(
             return CaptureResult.Error("Screen capture not initialized")
         }
         
-        return suspendCancellableCoroutine { continuation ->
-            try {
-                val startTime = System.currentTimeMillis()
-                
-                imageReader?.setOnImageAvailableListener({ reader ->
-                    try {
-                        val image = reader.acquireLatestImage()
-                        if (image != null) {
-                            val bitmap = convertImageToBitmap(image)
-                            image.close()
-                            
-                            captureCount++
-                            lastCaptureTime = System.currentTimeMillis()
-                            
-                            val processingTime = lastCaptureTime - startTime
-                            logger.debug(FGOBotLogger.Category.AUTOMATION, 
-                                "Screenshot captured in ${processingTime}ms (${bitmap.width}x${bitmap.height})")
-                            
-                            continuation.resume(CaptureResult.Success(bitmap, lastCaptureTime))
-                        } else {
-                            continuation.resumeWithException(Exception("Failed to acquire image"))
-                        }
-                    } catch (e: Exception) {
-                        logger.error(FGOBotLogger.Category.AUTOMATION, "Error processing captured image", e)
-                        continuation.resumeWithException(e)
-                    }
-                }, backgroundHandler)
-                
-                // Trigger capture by invalidating the virtual display
-                virtualDisplay?.let { display ->
-                    // The image will be captured automatically when the display updates
+        return try {
+            // FGA-inspired: Simple polling approach instead of complex listener setup
+            var attempts = 0
+            val maxAttempts = 10
+            val delayMs = 100L
+            
+            while (attempts < maxAttempts) {
+                val result = captureScreenSync()
+                if (result is CaptureResult.Success) {
+                    return result
                 }
                 
-            } catch (e: Exception) {
-                logger.error(FGOBotLogger.Category.AUTOMATION, "Error initiating screen capture", e)
-                continuation.resumeWithException(e)
+                attempts++
+                if (attempts < maxAttempts) {
+                    kotlinx.coroutines.delay(delayMs)
+                }
             }
+            
+            CaptureResult.Error("Failed to capture screen after $maxAttempts attempts")
+            
+        } catch (e: Exception) {
+            logger.error(FGOBotLogger.Category.AUTOMATION, "Error in captureScreen", e)
+            CaptureResult.Error("Capture error: ${e.message}", e)
         }
     }
     

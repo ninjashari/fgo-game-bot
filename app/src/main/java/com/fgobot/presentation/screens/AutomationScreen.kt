@@ -16,6 +16,8 @@
 package com.fgobot.presentation.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -28,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -43,6 +46,7 @@ import com.fgobot.presentation.theme.FGOBotTheme
 import com.fgobot.presentation.viewmodel.AutomationViewModel
 import com.fgobot.presentation.viewmodel.AutomationAction
 import com.fgobot.presentation.viewmodel.AutomationUiState
+import com.fgobot.core.FGOAccessibilityService
 
 /**
  * Main automation screen composable
@@ -56,8 +60,7 @@ import com.fgobot.presentation.viewmodel.AutomationUiState
 fun AutomationScreen(
     viewModel: AutomationViewModel,
     onNavigateToTeams: () -> Unit = {},
-    onNavigateToSettings: () -> Unit = {},
-    onNavigateToPermissions: () -> Unit = {}
+    onNavigateToSettings: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedTeam by viewModel.selectedTeam.collectAsStateWithLifecycle()
@@ -87,36 +90,106 @@ fun AutomationScreen(
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Permission management card (shown when permissions are missing)
-            item {
-                PermissionManagementCard(
-                    uiState = uiState,
-                    onNavigateToPermissions = onNavigateToPermissions
-                )
-            }
-            
             // Control panel
             item {
                 AutomationControlPanel(
                     uiState = uiState,
                     selectedTeam = selectedTeam,
                     onStartAutomation = { 
-                    if (!uiState.isScreenCapturePermissionGranted) {
-                        viewModel.handleAction(AutomationAction.RequestScreenCapturePermission)
-                    } else {
+                        // FGA-inspired approach: Always try to start, handle permissions internally
                         viewModel.handleAction(AutomationAction.StartAutomation)
-                    }
-                },
+                    },
                     onStopAutomation = { viewModel.handleAction(AutomationAction.StopAutomation) },
                     onPauseAutomation = { viewModel.handleAction(AutomationAction.PauseAutomation) },
                     onResumeAutomation = { viewModel.handleAction(AutomationAction.ResumeAutomation) },
-                    onRequestScreenCapturePermission = { viewModel.handleAction(AutomationAction.RequestScreenCapturePermission) },
                     onOpenAccessibilitySettings = { viewModel.handleAction(AutomationAction.OpenAccessibilitySettings) },
+                    onAction = { action -> viewModel.handleAction(action) },
                     canStart = viewModel.canStartAutomation(),
                     canStop = viewModel.canStopAutomation(),
                     canPause = viewModel.canPauseAutomation(),
                     canResume = viewModel.canResumeAutomation()
                 )
+            }
+            
+            // Error handling with retry option
+            if (uiState.errorMessage != null) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Error,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp),
+                                    tint = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                
+                                Text(
+                                    text = "Error",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            val errorMessage = uiState.errorMessage ?: ""
+                            Text(
+                                text = errorMessage,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            
+                            // Show retry button for initialization errors
+                            if (errorMessage.contains("initialization", ignoreCase = true) || 
+                                errorMessage.contains("timed out", ignoreCase = true)) {
+                                
+                                Spacer(modifier = Modifier.height(12.dp))
+                                
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    FGOBotPrimaryButton(
+                                        text = "Retry",
+                                        onClick = { 
+                                            viewModel.handleAction(AutomationAction.RetryInitialization)
+                                        }
+                                    )
+                                    
+                                    FGOBotSecondaryButton(
+                                        text = "Dismiss",
+                                        onClick = { 
+                                            viewModel.handleAction(AutomationAction.ClearError)
+                                        }
+                                    )
+                                }
+                            } else {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                
+                                FGOBotSecondaryButton(
+                                    text = "Dismiss",
+                                    onClick = { 
+                                        viewModel.handleAction(AutomationAction.ClearError)
+                                    },
+                                    fillMaxWidth = true
+                                )
+                            }
+                        }
+                    }
+                }
             }
             
             // Team selection
@@ -246,8 +319,8 @@ private fun AutomationControlPanel(
     onStopAutomation: () -> Unit,
     onPauseAutomation: () -> Unit,
     onResumeAutomation: () -> Unit,
-    onRequestScreenCapturePermission: () -> Unit,
     onOpenAccessibilitySettings: () -> Unit,
+    onAction: (AutomationAction) -> Unit,
     canStart: Boolean,
     canStop: Boolean,
     canPause: Boolean,
@@ -270,45 +343,31 @@ private fun AutomationControlPanel(
             AutomationStatusIndicators(
                 uiState = uiState, 
                 selectedTeam = selectedTeam,
-                onRequestScreenCapturePermission = onRequestScreenCapturePermission,
                 onOpenAccessibilitySettings = onOpenAccessibilitySettings
             )
             
-            // Control buttons
+            // FGA-inspired: Service control buttons instead of automation control
+            FGAServiceControlPanel(
+                isServiceRunning = uiState.isAccessibilityServiceEnabled && !FGOAccessibilityService.isServiceStopped(),
+                onStartService = { onAction(AutomationAction.StartService) },
+                onStopService = { onAction(AutomationAction.StopService) },
+                onOpenAccessibilitySettings = onOpenAccessibilitySettings
+            )
+            
+            // Control buttons - simplified for FGA mode
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Start button
-                FGOBotSuccessButton(
-                    text = "Start",
-                    onClick = onStartAutomation,
-                    enabled = canStart && !uiState.isLoading,
-                    modifier = Modifier.weight(1f)
-                )
-                
-                // Pause/Resume button
-                if (canPause) {
-                    FGOBotSecondaryButton(
-                        text = "Pause",
-                        onClick = onPauseAutomation,
-                        modifier = Modifier.weight(1f)
-                    )
-                } else if (canResume) {
-                    FGOBotPrimaryButton(
-                        text = "Resume",
-                        onClick = onResumeAutomation,
-                        modifier = Modifier.weight(1f)
+                // Only show stop button when automation is running
+                if (canStop) {
+                    FGOBotDangerButton(
+                        text = "Emergency Stop",
+                        onClick = onStopAutomation,
+                        enabled = canStop,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
-                
-                // Stop button
-                FGOBotDangerButton(
-                    text = "Stop",
-                    onClick = onStopAutomation,
-                    enabled = canStop,
-                    modifier = Modifier.weight(1f)
-                )
             }
             
             // Loading indicator
@@ -329,6 +388,18 @@ private fun AutomationControlPanel(
                     )
                 }
             }
+            
+            // FGA-inspired: Enhanced error handling UI
+            uiState.errorMessage?.let { errorMessage ->
+                FGAInspiredErrorCard(
+                    errorMessage = errorMessage,
+                    onRetry = { onAction(AutomationAction.RetryInitialization) },
+                    onClearError = { onAction(AutomationAction.ClearError) }
+                )
+            }
+            
+            // FGA-inspired: Floating overlay information card
+            FGAModeInfoCard()
             
             // Status text
             if (!canStart && !uiState.isLoading) {
@@ -351,7 +422,6 @@ private fun AutomationControlPanel(
 private fun AutomationStatusIndicators(
     uiState: AutomationUiState,
     selectedTeam: Team?,
-    onRequestScreenCapturePermission: () -> Unit,
     onOpenAccessibilitySettings: () -> Unit
 ) {
     Column(
@@ -365,16 +435,6 @@ private fun AutomationStatusIndicators(
             inactiveText = "Disabled",
             actionText = if (!uiState.isAccessibilityServiceEnabled) "Enable" else null,
             onActionClick = onOpenAccessibilitySettings
-        )
-        
-        // Screen capture permission status
-        StatusIndicatorRowWithAction(
-            label = "Screen Capture",
-            isActive = uiState.isScreenCapturePermissionGranted,
-            activeText = "Permitted",
-            inactiveText = "Not Permitted",
-            actionText = if (!uiState.isScreenCapturePermissionGranted) "Grant" else null,
-            onActionClick = onRequestScreenCapturePermission
         )
         
         // Team selection status
@@ -488,8 +548,6 @@ private fun getStatusMessage(uiState: AutomationUiState, selectedTeam: Team?): S
     return when {
         !uiState.isAccessibilityServiceEnabled -> 
             "⚠️ Please enable accessibility service in Settings"
-        !uiState.isScreenCapturePermissionGranted -> 
-            "⚠️ Screen capture permission required"
         selectedTeam == null -> 
             "⚠️ Please select a team to start automation"
         else -> 
@@ -901,62 +959,250 @@ private fun AutomationScreenPreview() {
 }
 
 /**
- * Permission management card
+ * FGA-inspired error card with enhanced feedback and recovery options
  */
 @Composable
-private fun PermissionManagementCard(
-    uiState: AutomationUiState,
-    onNavigateToPermissions: () -> Unit
+private fun FGAInspiredErrorCard(
+    errorMessage: String,
+    onRetry: () -> Unit,
+    onClearError: () -> Unit
 ) {
-    val hasAllPermissions = uiState.isAccessibilityServiceEnabled && uiState.isScreenCapturePermissionGranted
-    
-    if (!hasAllPermissions) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer
-            )
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Warning,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                    
-                    Text(
-                        text = "Permissions Required",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Text(
-                    text = "Some required permissions are missing. Grant them to enable automation.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer
+                Icon(
+                    imageVector = Icons.Default.Error,
+                    contentDescription = "Error",
+                    tint = MaterialTheme.colorScheme.error
                 )
                 
-                Spacer(modifier = Modifier.height(12.dp))
-                
+                Text(
+                    text = "Initialization Error",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+            
+            Text(
+                text = errorMessage,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            
+            // FGA-inspired: Provide helpful tips based on error type
+            val helpText = when {
+                errorMessage.contains("timeout") || errorMessage.contains("timed out") -> {
+                    "💡 Tip: Screen capture timeouts are common. Try closing other apps that might be using screen recording, or restart your device if the issue persists."
+                }
+                errorMessage.contains("screen capture") || errorMessage.contains("MediaProjection") -> {
+                    "💡 Tip: Make sure to grant screen capture permission when prompted. Some devices require this permission to be granted each time."
+                }
+                errorMessage.contains("Accessibility") -> {
+                    "💡 Tip: Go to Settings > Accessibility > Downloaded Apps > FGO Bot and enable the service."
+                }
+                else -> {
+                    "💡 Tip: If the problem persists, try restarting the app or your device."
+                }
+            }
+            
+            Text(
+                text = helpText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f),
+                fontStyle = FontStyle.Italic
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 FGOBotPrimaryButton(
-                    text = "Manage Permissions",
-                    onClick = onNavigateToPermissions,
-                    fillMaxWidth = true
+                    text = "Try Again",
+                    onClick = onRetry,
+                    modifier = Modifier.weight(1f)
+                )
+                
+                FGOBotTextButton(
+                    text = "Dismiss",
+                    onClick = onClearError,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
     }
-} 
+}
+
+/**
+ * FGA-inspired: Floating overlay information card
+ */
+@Composable
+private fun FGAModeInfoCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = "FGA Mode",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                
+                Text(
+                    text = "FGA-Inspired Mode",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            Text(
+                text = "🎮 How to use FGA Mode:",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "1. Click 'Start Service' above",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                
+                Text(
+                    text = "2. Open FGO app",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                
+                Text(
+                    text = "3. A draggable floating button will appear",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                
+                Text(
+                    text = "4. Drag the button to your preferred position",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                
+                Text(
+                    text = "5. Tap the floating button to start automation",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            
+            Text(
+                text = "💡 The floating button is draggable and can be positioned anywhere on screen. Click 'Stop Service' to hide it completely!",
+                style = MaterialTheme.typography.bodySmall,
+                fontStyle = FontStyle.Italic,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+            )
+        }
+    }
+}
+
+/**
+ * FGA-inspired: Service control panel with start/stop service buttons
+ */
+@Composable
+private fun FGAServiceControlPanel(
+    isServiceRunning: Boolean,
+    onStartService: () -> Unit,
+    onStopService: () -> Unit,
+    onOpenAccessibilitySettings: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "Service Control",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            
+            // Service status
+            StatusIndicatorRowWithAction(
+                label = "Accessibility Service",
+                isActive = isServiceRunning,
+                activeText = "Running",
+                inactiveText = "Stopped",
+                actionText = if (!isServiceRunning) "Enable" else null,
+                onActionClick = onOpenAccessibilitySettings
+            )
+            
+            // FGA-style service control buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (isServiceRunning) {
+                    // Service is running - show stop service button
+                    FGOBotDangerButton(
+                        text = "Stop Service",
+                        onClick = onStopService,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    // Service is not running - show start service button
+                    FGOBotSuccessButton(
+                        text = "Start Service",
+                        onClick = onStartService,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+            
+            // Information text
+            Text(
+                text = if (isServiceRunning) {
+                    "✅ Service is running. Open FGO to see the floating button."
+                } else {
+                    "⚠️ Start the service to enable floating overlay automation."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isServiceRunning) 
+                    MaterialTheme.colorScheme.primary 
+                else 
+                    MaterialTheme.colorScheme.error,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+ 

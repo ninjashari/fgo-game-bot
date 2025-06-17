@@ -117,33 +117,100 @@ class AutomationController(
      */
     suspend fun initialize(resultCode: Int, data: Intent): Boolean {
         return try {
-            logger.info(FGOBotLogger.Category.AUTOMATION, "Initializing automation controller")
+            logger.info(FGOBotLogger.Category.AUTOMATION, "Initializing automation controller (FGA-inspired)")
             _automationState.value = AutomationState.INITIALIZING
             
-            // Initialize core systems
-            screenCapture = ScreenCapture(context, logger)
-            imageRecognition = ImageRecognition(context, logger)
+            // FGA-inspired approach: Initialize systems in order of dependency and reliability
+            logger.debug(FGOBotLogger.Category.AUTOMATION, "Creating core system instances...")
+            
+            // 1. Initialize InputController first (most reliable)
+            logger.debug(FGOBotLogger.Category.AUTOMATION, "Initializing input controller...")
             inputController = InputController(accessibilityService, logger)
-            decisionEngine = DecisionEngine(imageRecognition, logger)
             
-            // Initialize each system
-            val screenCaptureInit = screenCapture.initialize(resultCode, data)
-            val imageRecognitionInit = imageRecognition.initialize()
+            // 2. Initialize ImageRecognition (lightweight in FGA mode)
+            logger.debug(FGOBotLogger.Category.AUTOMATION, "Initializing image recognition...")
+            imageRecognition = ImageRecognition(context, logger)
+            val imageRecognitionInit = withTimeoutOrNull(3000L) { // Reduced timeout for lightweight init
+                imageRecognition.initialize()
+            } ?: false
             
-            if (screenCaptureInit && imageRecognitionInit) {
-                isInitialized = true
-                _automationState.value = AutomationState.IDLE
-                logger.info(FGOBotLogger.Category.AUTOMATION, "Automation controller initialized successfully")
-                true
-            } else {
-                logger.error(FGOBotLogger.Category.AUTOMATION, "Failed to initialize core systems")
+            if (!imageRecognitionInit) {
+                logger.error(FGOBotLogger.Category.AUTOMATION, "Image recognition initialization failed or timed out")
                 _automationState.value = AutomationState.ERROR
-                false
+                return false
             }
             
+            // 3. Initialize DecisionEngine (depends on ImageRecognition)
+            logger.debug(FGOBotLogger.Category.AUTOMATION, "Initializing decision engine...")
+            decisionEngine = DecisionEngine(imageRecognition, logger)
+            
+            // 4. Initialize ScreenCapture last (most complex and prone to issues)
+            logger.debug(FGOBotLogger.Category.AUTOMATION, "Initializing screen capture...")
+            screenCapture = ScreenCapture(context, logger)
+            val screenCaptureInit = withTimeoutOrNull(8000L) { // Reasonable timeout for screen capture
+                screenCapture.initialize(resultCode, data)
+            } ?: false
+            
+            if (!screenCaptureInit) {
+                logger.error(FGOBotLogger.Category.AUTOMATION, "Screen capture initialization failed or timed out")
+                _automationState.value = AutomationState.ERROR
+                return false
+            }
+            
+            // FGA-inspired: Validate all systems are working
+            logger.debug(FGOBotLogger.Category.AUTOMATION, "Validating system integration...")
+            if (!validateSystemIntegration()) {
+                logger.error(FGOBotLogger.Category.AUTOMATION, "System integration validation failed")
+                _automationState.value = AutomationState.ERROR
+                return false
+            }
+            
+            isInitialized = true
+            _automationState.value = AutomationState.IDLE
+            
+            logger.info(FGOBotLogger.Category.AUTOMATION, "Automation controller initialized successfully")
+            true
+            
         } catch (e: Exception) {
-            logger.error(FGOBotLogger.Category.AUTOMATION, "Error during initialization", e)
+            logger.error(FGOBotLogger.Category.AUTOMATION, "Failed to initialize automation controller", e)
             _automationState.value = AutomationState.ERROR
+            false
+        }
+    }
+    
+    /**
+     * FGA-inspired: Validate that all systems are working together properly
+     */
+    private suspend fun validateSystemIntegration(): Boolean {
+        return try {
+            logger.debug(FGOBotLogger.Category.AUTOMATION, "Validating system integration...")
+            
+            // Test screen capture
+            val captureResult = screenCapture.captureScreen()
+            if (captureResult !is CaptureResult.Success) {
+                logger.error(FGOBotLogger.Category.AUTOMATION, "Screen capture validation failed: $captureResult")
+                return false
+            }
+            
+            logger.debug(FGOBotLogger.Category.AUTOMATION, "Screen capture validation passed")
+            
+            // Test image recognition with captured image
+            val battleState = imageRecognition.detectBattleState(captureResult.bitmap)
+            logger.debug(FGOBotLogger.Category.AUTOMATION, "Image recognition validation: detected state = $battleState")
+            
+            // Test input controller (basic validation)
+            if (!inputController.isReady()) {
+                logger.error(FGOBotLogger.Category.AUTOMATION, "Input controller not ready")
+                return false
+            }
+            
+            logger.debug(FGOBotLogger.Category.AUTOMATION, "Input controller validation passed")
+            
+            logger.info(FGOBotLogger.Category.AUTOMATION, "All systems validated successfully")
+            true
+            
+        } catch (e: Exception) {
+            logger.error(FGOBotLogger.Category.AUTOMATION, "System integration validation failed", e)
             false
         }
     }

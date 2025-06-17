@@ -71,6 +71,21 @@ class InputController(
     private val gestureStats = mutableMapOf<GestureType, GestureStats>()
     
     /**
+     * Checks if the input controller is ready to perform gestures
+     * 
+     * @return True if ready to perform gestures
+     */
+    fun isReady(): Boolean {
+        return try {
+            // Check if accessibility service is available and connected
+            accessibilityService.serviceInfo != null
+        } catch (e: Exception) {
+            logger.error(FGOBotLogger.Category.AUTOMATION, "Error checking input controller readiness", e)
+            false
+        }
+    }
+    
+    /**
      * Performs a tap gesture at the specified location
      * 
      * @param point Target location for tap
@@ -259,7 +274,7 @@ class InputController(
     /**
      * Gets input controller statistics
      * 
-     * @return Map of gesture types to their statistics
+     * @return Current gesture statistics
      */
     fun getInputStats(): Map<GestureType, GestureStats> {
         return gestureStats.toMap()

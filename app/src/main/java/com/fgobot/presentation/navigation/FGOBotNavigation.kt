@@ -95,6 +95,7 @@ fun FGOBotNavigation(
                 )
             }
             
+
             composable(Screen.Teams.route) {
                 TeamsScreen(
                     onNavigateBack = {

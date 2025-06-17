@@ -11,13 +11,17 @@
  * - Accessibility service integration
  * - Runtime permission handling
  * - Screen capture permission management
+ * - FGA-inspired broadcast handling for floating overlay
  */
 
 package com.fgobot.presentation
 
 import android.Manifest
 import android.app.Activity
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
@@ -39,6 +43,7 @@ import com.fgobot.presentation.viewmodel.AutomationViewModel
 import com.fgobot.data.repository.TeamRepository
 import com.fgobot.data.repository.BattleLogRepository
 import com.fgobot.core.logging.FGOBotLogger
+import com.fgobot.core.FGOAccessibilityService
 
 /**
  * MainActivity - Primary activity for the FGO Bot application
@@ -46,12 +51,17 @@ import com.fgobot.core.logging.FGOBotLogger
  * This activity serves as the main entry point and container for the
  * Jetpack Compose UI. It handles the overall app navigation and
  * lifecycle management with the new navigation system.
+ * 
+ * FGA-Inspired Features:
+ * - Broadcast receiver for screen capture requests from accessibility service
+ * - Seamless permission handling between service and activity
  */
 class MainActivity : ComponentActivity() {
     
     companion object {
         private const val TAG = "MainActivity"
         private const val REQUEST_CODE_SCREEN_CAPTURE = 1001
+        private const val SCREEN_CAPTURE_BROADCAST_ACTION = "com.fgobot.REQUEST_SCREEN_CAPTURE"
     }
     
     // TODO: Implement proper dependency injection
@@ -60,6 +70,19 @@ class MainActivity : ComponentActivity() {
     
     // MediaProjection for screen capture
     private lateinit var mediaProjectionManager: MediaProjectionManager
+    
+    // FGA-inspired: Broadcast receiver for screen capture requests from accessibility service
+    private val screenCaptureReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == SCREEN_CAPTURE_BROADCAST_ACTION) {
+                val screenCaptureIntent = intent.getParcelableExtra<Intent>("screen_capture_intent")
+                if (screenCaptureIntent != null) {
+                    logger.info(FGOBotLogger.Category.GENERAL, "Received screen capture request from accessibility service")
+                    floatingOverlayScreenCapturePermissionLauncher.launch(screenCaptureIntent)
+                }
+            }
+        }
+    }
     
     // Permission request launchers
     private val requestPermissionLauncher = registerForActivityResult(
@@ -70,7 +93,7 @@ class MainActivity : ComponentActivity() {
         }
         
         // Update ViewModel with permission status
-        automationViewModel.updatePermissionStatus()
+        automationViewModel.refreshPermissionStatus()
     }
     
     private val overlayPermissionLauncher = registerForActivityResult(
@@ -83,7 +106,7 @@ class MainActivity : ComponentActivity() {
         }
         
         // Update ViewModel with permission status
-        automationViewModel.updatePermissionStatus()
+        automationViewModel.refreshPermissionStatus()
     }
     
     private val screenCapturePermissionLauncher = registerForActivityResult(
@@ -96,15 +119,26 @@ class MainActivity : ComponentActivity() {
             automationViewModel.initializeAutomationWithPermission(result.resultCode, result.data!!)
         } else {
             logger.warn(FGOBotLogger.Category.GENERAL, "Screen capture permission denied")
-            automationViewModel.updatePermissionStatus()
+            automationViewModel.refreshPermissionStatus()
         }
+    }
+    
+    // FGA-inspired: Screen capture permission launcher for floating overlay requests
+    private val floatingOverlayScreenCapturePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        logger.info(FGOBotLogger.Category.GENERAL, "Floating overlay screen capture permission result: ${result.resultCode}")
+        
+        // Forward result to accessibility service
+        val service = FGOAccessibilityService.getInstance()
+        service?.handleScreenCapturePermission(result.resultCode, result.data)
     }
 
     private val accessibilitySettingsLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         // Update ViewModel with permission status after returning from settings
-        automationViewModel.updatePermissionStatus()
+        automationViewModel.refreshPermissionStatus()
         logger.info(FGOBotLogger.Category.GENERAL, "Returned from accessibility settings")
     }
 
@@ -119,6 +153,9 @@ class MainActivity : ComponentActivity() {
         
         // Initialize MediaProjectionManager
         mediaProjectionManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        
+        // FGA-inspired: Register broadcast receiver for screen capture requests
+        registerScreenCaptureReceiver()
         
         // Request necessary permissions
         requestRequiredPermissions()
@@ -155,6 +192,28 @@ class MainActivity : ComponentActivity() {
                     FGOBotNavigation(automationViewModel = automationViewModel)
                 }
             }
+        }
+    }
+    
+    /**
+     * FGA-inspired: Register broadcast receiver for screen capture requests
+     */
+    private fun registerScreenCaptureReceiver() {
+        val filter = IntentFilter(SCREEN_CAPTURE_BROADCAST_ACTION)
+        registerReceiver(screenCaptureReceiver, filter, RECEIVER_NOT_EXPORTED)
+        logger.info(FGOBotLogger.Category.GENERAL, "Screen capture broadcast receiver registered")
+    }
+    
+    /**
+     * FGA-inspired: Unregister broadcast receiver
+     */
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            unregisterReceiver(screenCaptureReceiver)
+            logger.info(FGOBotLogger.Category.GENERAL, "Screen capture broadcast receiver unregistered")
+        } catch (e: Exception) {
+            logger.warn(FGOBotLogger.Category.GENERAL, "Error unregistering broadcast receiver: ${e.message}")
         }
     }
 

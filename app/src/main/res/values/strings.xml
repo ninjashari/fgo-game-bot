@@ -19,6 +19,7 @@
     <string name="nav_quests">Quests</string>
     <string name="nav_battle">Battle</string>
     <string name="nav_settings">Settings</string>
+    <string name="nav_permissions">Permissions</string>
     
     <!-- Team Management -->
     <string name="team_management">Team Management</string>
@@ -55,7 +56,7 @@
     
     <!-- Accessibility Service -->
     <string name="accessibility_service_name">FGO Bot Accessibility Service</string>
-    <string name="accessibility_service_description">Allows FGO Bot to automate gameplay by reading screen content and performing actions</string>
+    <string name="accessibility_service_description">FGO Bot provides automated gameplay assistance for Fate/Grand Order. It shows a floating button when FGO is detected and can perform automated actions like farming. This service does not modify the game and only simulates user interactions.</string>
     
     <!-- Error Messages -->
     <string name="error_network">Network error occurred</string>

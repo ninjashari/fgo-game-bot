@@ -16,6 +16,7 @@
 
 package com.fgobot.presentation.viewmodel
 
+import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.content.Intent
@@ -35,6 +36,7 @@ import com.fgobot.data.repository.BattleLogRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * UI state for automation screen
@@ -66,6 +68,11 @@ sealed class AutomationAction {
     data class InitializeAutomation(val resultCode: Int, val data: Intent) : AutomationAction()
     object RequestScreenCapturePermission : AutomationAction()
     object OpenAccessibilitySettings : AutomationAction()
+    object RetryInitialization : AutomationAction()
+    
+    // FGA-inspired: Service control actions
+    object StartService : AutomationAction()
+    object StopService : AutomationAction()
 }
 
 /**
@@ -101,6 +108,9 @@ class AutomationViewModel(
     // Selected team for automation
     private val _selectedTeam = MutableStateFlow<Team?>(null)
     val selectedTeam: StateFlow<Team?> = _selectedTeam.asStateFlow()
+    
+    // Flag to track if we are collecting controller state
+    private var isCollectingControllerState = false
     
     init {
         // Initialize ViewModel
@@ -194,13 +204,18 @@ class AutomationViewModel(
     }
     
     /**
-     * Update all permission statuses
+     * Update permission status including accessibility service state
      */
-    fun updatePermissionStatus() {
+    private fun updatePermissionStatus() {
         val isAccessibilityEnabled = FGOAccessibilityService.isServiceRunning()
         
         _uiState.value = _uiState.value.copy(
             isAccessibilityServiceEnabled = isAccessibilityEnabled
+        )
+        
+        logger.debug(
+            FGOBotLogger.Category.UI,
+            "Permission status updated - Accessibility: $isAccessibilityEnabled"
         )
         
         // Initialize automation controller when accessibility service becomes available
@@ -212,19 +227,27 @@ class AutomationViewModel(
                     service,
                     logger
                 )
+                // Reset the collection flag for the new controller
+                isCollectingControllerState = false
             }
         }
     }
     
     /**
-     * Start periodic updates for real-time data
+     * Start periodic updates for UI state
      */
     private fun startPeriodicUpdates() {
         viewModelScope.launch {
             while (true) {
+                delay(1000) // Update every second
+                
+                // Update permission status
                 updatePermissionStatus()
-                updateAutomationState()
-                delay(2000L) // Update every 2 seconds
+                
+                // Update automation stats if controller is available
+                if (isCollectingControllerState) {
+                    updateAutomationState()
+                }
             }
         }
     }
@@ -233,28 +256,42 @@ class AutomationViewModel(
      * Update automation state from controller
      */
     private fun updateAutomationState() {
-        automationController?.let { controller ->
-            viewModelScope.launch {
+        val controller = automationController
+        if (controller != null) {
+            // Only start collecting if we haven't already started
+            if (!isCollectingControllerState) {
+                isCollectingControllerState = true
+                
                 // Collect automation state
-                controller.automationState.collect { state ->
-                    _uiState.value = _uiState.value.copy(automationState = state)
+                viewModelScope.launch {
+                    controller.automationState.collect { state ->
+                        _uiState.value = _uiState.value.copy(automationState = state)
+                        logger.debug(FGOBotLogger.Category.UI, "Automation state updated to: $state")
+                    }
                 }
-            }
-            
-            viewModelScope.launch {
+                
                 // Collect automation stats
-                controller.automationStats.collect { stats ->
-                    _uiState.value = _uiState.value.copy(automationStats = stats)
+                viewModelScope.launch {
+                    controller.automationStats.collect { stats ->
+                        _uiState.value = _uiState.value.copy(automationStats = stats)
+                    }
                 }
-            }
-            
-            viewModelScope.launch {
+                
                 // Collect current team
-                controller.currentTeam.collect { team ->
-                    _uiState.value = _uiState.value.copy(currentTeam = team)
+                viewModelScope.launch {
+                    controller.currentTeam.collect { team ->
+                        _uiState.value = _uiState.value.copy(currentTeam = team)
+                    }
                 }
             }
         }
+    }
+    
+    /**
+     * Refresh permission status (public method for external calls)
+     */
+    fun refreshPermissionStatus() {
+        updatePermissionStatus()
     }
     
     /**
@@ -274,6 +311,9 @@ class AutomationViewModel(
                     is AutomationAction.InitializeAutomation -> initializeAutomation(action.resultCode, action.data)
                     is AutomationAction.RequestScreenCapturePermission -> requestScreenCapturePermission()
                     is AutomationAction.OpenAccessibilitySettings -> openAccessibilitySettings()
+                    is AutomationAction.RetryInitialization -> retryInitialization()
+                    is AutomationAction.StartService -> startService()
+                    is AutomationAction.StopService -> stopService()
                 }
             } catch (e: Exception) {
                 logger.error(FGOBotLogger.Category.UI, "Error handling action: $action", e)
@@ -286,28 +326,54 @@ class AutomationViewModel(
      * Start automation with selected team
      */
     private suspend fun startAutomation() {
-        val selectedTeam = _selectedTeam.value
-        if (selectedTeam == null) {
-            _uiState.value = _uiState.value.copy(errorMessage = "Please select a team first")
-            return
-        }
-        
-        val controller = automationController
-        if (controller == null) {
-            _uiState.value = _uiState.value.copy(errorMessage = "Accessibility service not available")
-            return
-        }
-        
-        if (!_uiState.value.isInitialized) {
-            _uiState.value = _uiState.value.copy(errorMessage = "Automation not initialized. Please grant screen capture permission.")
-            return
-        }
-        
-        val success = controller.startAutomation(selectedTeam)
-        if (!success) {
-            _uiState.value = _uiState.value.copy(errorMessage = "Failed to start automation")
-        } else {
-            logger.info(FGOBotLogger.Category.UI, "Automation started with team: ${selectedTeam.name}")
+        try {
+            // Check if accessibility service is enabled
+            if (!_uiState.value.isAccessibilityServiceEnabled) {
+                _uiState.value = _uiState.value.copy(errorMessage = "Accessibility service not enabled. Please enable it in Settings.")
+                return
+            }
+            
+            // Check if team is selected
+            if (_selectedTeam.value == null) {
+                _uiState.value = _uiState.value.copy(errorMessage = "Please select a team before starting automation.")
+                return
+            }
+            
+            // FGA-inspired approach: Request screen capture permission if not granted
+            if (!_uiState.value.isScreenCapturePermissionGranted) {
+                logger.info(FGOBotLogger.Category.UI, "Screen capture permission not granted, requesting...")
+                requestScreenCapturePermission()
+                return
+            }
+            
+            // Start automation if all conditions are met
+            val controller = automationController
+            if (controller != null) {
+                val team = _selectedTeam.value!!
+                logger.info(FGOBotLogger.Category.AUTOMATION, "Starting automation with team: ${team.name}")
+                
+                // Let the controller handle its own state - don't override it manually
+                val startSuccess = controller.startAutomation(team)
+                
+                if (!startSuccess) {
+                    _uiState.value = _uiState.value.copy(
+                        automationState = AutomationState.ERROR,
+                        errorMessage = "Failed to start automation - controller returned false"
+                    )
+                    logger.error(FGOBotLogger.Category.AUTOMATION, "Controller failed to start automation")
+                }
+                // If successful, the controller's state flow will update the UI state automatically
+                
+            } else {
+                throw IllegalStateException("Automation controller not initialized")
+            }
+            
+        } catch (e: Exception) {
+            logger.error(FGOBotLogger.Category.AUTOMATION, "Error starting automation", e)
+            _uiState.value = _uiState.value.copy(
+                automationState = AutomationState.ERROR,
+                errorMessage = "Failed to start automation: ${e.message}"
+            )
         }
     }
     
@@ -368,37 +434,79 @@ class AutomationViewModel(
      * Initialize automation with screen capture permission
      */
     private suspend fun initializeAutomation(resultCode: Int, data: Intent) {
-        val controller = automationController
-        if (controller == null) {
-            _uiState.value = _uiState.value.copy(errorMessage = "Accessibility service not available")
-            return
-        }
-        
         try {
+            logger.info(FGOBotLogger.Category.AUTOMATION, "Starting automation initialization...")
             _uiState.value = _uiState.value.copy(isLoading = true)
             
-            val success = controller.initialize(resultCode, data)
-            _uiState.value = _uiState.value.copy(
-                isInitialized = success,
-                isScreenCapturePermissionGranted = success,
-                isLoading = false,
-                errorMessage = if (!success) "Failed to initialize automation" else null
-            )
-            
-            if (success) {
-                logger.info(FGOBotLogger.Category.UI, "Automation initialized successfully")
+            if (resultCode == Activity.RESULT_OK) {
+                logger.info(FGOBotLogger.Category.AUTOMATION, "Screen capture permission granted, proceeding with initialization")
+                
+                // Initialize automation controller with screen capture permission
+                val service = FGOAccessibilityService.getInstance()
+                if (service != null) {
+                    logger.info(FGOBotLogger.Category.AUTOMATION, "Accessibility service available, creating controller")
+                    
+                    // Create new controller if not exists
+                    if (automationController == null) {
+                        automationController = AutomationController(
+                            getApplication(),
+                            service,
+                            logger
+                        )
+                        // Reset the collection flag for the new controller
+                        isCollectingControllerState = false
+                        logger.info(FGOBotLogger.Category.AUTOMATION, "AutomationController created")
+                    }
+                    
+                    // Initialize the controller with screen capture permission
+                    val controller = automationController!!
+                    logger.info(FGOBotLogger.Category.AUTOMATION, "Calling controller.initialize()...")
+                    
+                    // Add timeout for the entire initialization process
+                    val initSuccess = withTimeoutOrNull(15000L) { // 15 second timeout
+                        controller.initialize(resultCode, data)
+                    } ?: false
+                    
+                    logger.info(FGOBotLogger.Category.AUTOMATION, "Controller initialization result: $initSuccess")
+                    
+                    if (initSuccess) {
+                        _uiState.value = _uiState.value.copy(
+                            isInitialized = true,
+                            isScreenCapturePermissionGranted = true,
+                            isLoading = false,
+                            errorMessage = null
+                        )
+                    } else {
+                        handleInitializationError("Initialization failed or timed out")
+                    }
+                    
+                    if (initSuccess) {
+                        logger.info(FGOBotLogger.Category.AUTOMATION, "Automation initialized successfully")
+                        
+                        // FGA-inspired approach: Automatically start automation after permission granted
+                        if (_selectedTeam.value != null && _uiState.value.isAccessibilityServiceEnabled) {
+                            logger.info(FGOBotLogger.Category.AUTOMATION, "Auto-starting automation after permission granted")
+                            startAutomation()
+                        } else {
+                            logger.info(FGOBotLogger.Category.AUTOMATION, "Not auto-starting: team=${_selectedTeam.value?.name}, accessibility=${_uiState.value.isAccessibilityServiceEnabled}")
+                        }
+                    } else {
+                        logger.error(FGOBotLogger.Category.AUTOMATION, "Failed to initialize automation controller")
+                    }
+                } else {
+                    logger.error(FGOBotLogger.Category.AUTOMATION, "Accessibility service not available")
+                    throw IllegalStateException("Accessibility service not available")
+                }
             } else {
-                logger.error(FGOBotLogger.Category.UI, "Automation initialization failed")
+                logger.warn(FGOBotLogger.Category.AUTOMATION, "Screen capture permission denied, resultCode: $resultCode")
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Screen capture permission denied"
+                )
             }
-            
         } catch (e: Exception) {
             logger.error(FGOBotLogger.Category.UI, "Error during automation initialization", e)
-            _uiState.value = _uiState.value.copy(
-                isInitialized = false,
-                isScreenCapturePermissionGranted = false,
-                isLoading = false,
-                errorMessage = "Initialization error: ${e.message}"
-            )
+            handleInitializationError("Initialization error: ${e.message}")
         }
     }
     
@@ -467,7 +575,6 @@ class AutomationViewModel(
      */
     fun canStartAutomation(): Boolean {
         return _uiState.value.isAccessibilityServiceEnabled &&
-                _uiState.value.isInitialized &&
                 _selectedTeam.value != null &&
                 _uiState.value.automationState == AutomationState.IDLE
     }
@@ -506,6 +613,131 @@ class AutomationViewModel(
         } catch (e: Exception) {
             logger.error(FGOBotLogger.Category.UI, "Error opening accessibility settings", e)
             _uiState.value = _uiState.value.copy(errorMessage = "Failed to open accessibility settings: ${e.message}")
+        }
+    }
+    
+    /**
+     * Retry initialization after failure
+     */
+    private suspend fun retryInitialization() {
+        try {
+            logger.info(FGOBotLogger.Category.UI, "Retrying automation initialization...")
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                errorMessage = null
+            )
+            
+            // FGA-inspired: Clean up previous failed initialization
+            automationController?.cleanup()
+            automationController = null
+            isCollectingControllerState = false
+            
+            // Request screen capture permission again
+            requestScreenCapturePermission()
+            
+        } catch (e: Exception) {
+            logger.error(FGOBotLogger.Category.UI, "Error during retry initialization", e)
+            _uiState.value = _uiState.value.copy(
+                isLoading = false,
+                errorMessage = "Retry failed: ${e.message}"
+            )
+        }
+    }
+    
+    /**
+     * FGA-inspired: Enhanced error handling with specific recovery actions
+     */
+    private fun handleInitializationError(error: String) {
+        logger.error(FGOBotLogger.Category.UI, "Initialization error: $error")
+        
+        val errorMessage = when {
+            error.contains("timeout") || error.contains("timed out") -> {
+                "Initialization timed out. This usually happens due to screen capture issues. Try again or restart the app."
+            }
+            error.contains("MediaProjection") || error.contains("screen capture") -> {
+                "Screen capture permission issue. Please grant permission when prompted."
+            }
+            error.contains("Accessibility") -> {
+                "Accessibility service not available. Please enable it in Settings."
+            }
+            error.contains("OpenCV") -> {
+                "Image recognition system failed to initialize. Using fallback mode."
+            }
+            else -> {
+                "Initialization failed: $error. Please try again."
+            }
+        }
+        
+        _uiState.value = _uiState.value.copy(
+            isLoading = false,
+            errorMessage = errorMessage,
+            isInitialized = false
+        )
+    }
+    
+    /**
+     * FGA-inspired: Start service (restart if already enabled, redirect to settings if not)
+     */
+    private fun startService() {
+        try {
+            logger.info(FGOBotLogger.Category.UI, "Starting service")
+            
+            val service = FGOAccessibilityService.getInstance()
+            if (service != null) {
+                // Service is already running, just restart it
+                service.restartService()
+                logger.info(FGOBotLogger.Category.UI, "Service restarted")
+                
+                // Refresh permission status to update UI
+                viewModelScope.launch {
+                    delay(500) // Give service time to restart
+                    updatePermissionStatus()
+                }
+            } else {
+                // Service not running, redirect to accessibility settings
+                logger.info(FGOBotLogger.Category.UI, "Service not running, redirecting to accessibility settings")
+                openAccessibilitySettings()
+            }
+            
+        } catch (e: Exception) {
+            logger.error(FGOBotLogger.Category.UI, "Error starting service", e)
+            _uiState.value = _uiState.value.copy(errorMessage = "Failed to start service: ${e.message}")
+        }
+    }
+    
+    /**
+     * FGA-inspired: Stop service and hide floating overlay
+     */
+    private fun stopService() {
+        try {
+            logger.info(FGOBotLogger.Category.UI, "Stopping service and hiding floating overlay")
+            
+            // Stop any running automation
+            viewModelScope.launch {
+                automationController?.stopAutomation()
+            }
+            
+            // Tell accessibility service to hide floating overlay
+            val service = FGOAccessibilityService.getInstance()
+            service?.stopService()
+            
+            // Update UI state
+            _uiState.value = _uiState.value.copy(
+                automationState = AutomationState.IDLE,
+                errorMessage = null
+            )
+            
+            // Refresh permission status to update UI
+            viewModelScope.launch {
+                delay(500) // Give service time to stop
+                updatePermissionStatus()
+            }
+            
+            logger.info(FGOBotLogger.Category.UI, "Service stopped successfully")
+            
+        } catch (e: Exception) {
+            logger.error(FGOBotLogger.Category.UI, "Error stopping service", e)
+            _uiState.value = _uiState.value.copy(errorMessage = "Failed to stop service: ${e.message}")
         }
     }
 } 

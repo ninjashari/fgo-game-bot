@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    FGO Bot - Floating Button Background
+    
+    This drawable defines the background for the floating play button.
+    Inspired by FGA's floating button design.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    
+    <!-- Background color with transparency -->
+    <solid android:color="#CC2196F3" />
+    
+    <!-- Border -->
+    <stroke 
+        android:width="2dp"
+        android:color="#FFFFFF" />
+    
+    <!-- Shadow effect -->
+    <size 
+        android:width="56dp"
+        android:height="56dp" />
+
+</shape> 

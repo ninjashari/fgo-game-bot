@@ -61,6 +61,7 @@ fun PermissionsScreen(
     viewModel: AutomationViewModel,
     onNavigateBack: () -> Unit
 ) {
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     
